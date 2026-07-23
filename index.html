@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internship Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="api.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <a class="logo" href="#">Internship Tracker</a>
+        <div class="nav-links">
+            <a href="#search">Search</a>
+            <a href="#results">Results</a>
+        </div>
+    </nav>
+    <main id="search">
+        <form id="search-form" class="search-form">
+            <div class="form-field">
+                <label for="keyword">Role or keyword</label>
+                <input id="keyword" placeholder="Software engineering intern">
+            </div>
+
+            <div class="form-field country-field">
+                <label for="country">Country</label>
+                <select id="country">
+                    <option value="at">Austria</option>
+                    <option value="au">Australia</option>
+                    <option value="br">Brazil</option>
+                    <option value="ca">Canada</option>
+                    <option value="fr">France</option>
+                    <option value="de">Germany</option>
+                    <option value="in">India</option>
+                    <option value="it">Italy</option>
+                    <option value="nl">Netherlands</option>
+                    <option value="nz">New Zealand</option>
+                    <option value="pl">Poland</option>
+                    <option value="sg">Singapore</option>
+                    <option value="es">Spain</option>
+                    <option value="gb" selected>United Kingdom</option>
+                    <option value="us">United States</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="location">Location</label>
+                <input id="location" placeholder="Anywhere">
+            </div>
+
+            <button id="search-button" type="submit">Search</button>
+        </form>
+
+        <section id="results" aria-live="polite"></section>
+
+        <template id="job-template">
+            <article class="job-card">
+                <h3 class="job-title"></h3>
+                <p><strong>Company:</strong> <span class="job-company"></span></p>
+                <p><strong>Location:</strong> <span class="job-location"></span></p>
+                <p class="job-description"></p>
+                <a class="job-link" target="_blank" rel="noopener noreferrer">
+                    View Job
+                </a>
+            </article>
+        </template>
+
+        <button id="next-button" type="button" hidden>
+            Next page
+        </button>
+    </main>
+</body>
+</html>
