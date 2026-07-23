@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Internship Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="api.js" defer></script>
     <script src="app.js" defer></script>
 </head>
 <body>
     <nav class="navbar">
-        <a class="logo" href="#">Internship Tracker</a>
-        <div class="nav-links">
-            <a href="#search">Search</a>
-            <a href="#results">Results</a>
+        <div class="nav-inner">
+            <a class="logo" href="#">Internship Tracker</a>
+            <div class="nav-links">
+                <a href="#search" aria-current="page">Search</a>
+                <a href="#results">Results</a>
+            </div>
         </div>
     </nav>
     <main id="search">
@@ -57,18 +62,25 @@
         <template id="job-template">
             <article class="job-card">
                 <h3 class="job-title"></h3>
-                <p><strong>Company:</strong> <span class="job-company"></span></p>
-                <p><strong>Location:</strong> <span class="job-location"></span></p>
+                <p class="job-meta">
+                    <span class="job-company"></span>
+                    <span class="job-location"></span>
+                </p>
                 <p class="job-description"></p>
-                <a class="job-link" target="_blank" rel="noopener noreferrer">
-                    View Job
-                </a>
+                <footer class="job-card-footer">
+                    <a class="job-link" target="_blank" rel="noopener noreferrer">
+                        View details
+                    </a>
+                </footer>
             </article>
         </template>
 
-        <button id="next-button" type="button" hidden>
-            Next page
-        </button>
+        <nav
+            id="pagination"
+            class="pagination"
+            aria-label="Search result pages"
+            hidden
+        ></nav>
     </main>
 </body>
 </html>

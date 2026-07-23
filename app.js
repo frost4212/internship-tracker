@@ -3,7 +3,7 @@ let currentPage = 1;
 
 const searchForm = document.getElementById("search-form");
 const searchButton = document.getElementById("search-button");
-const nextButton = document.getElementById("next-button");
+const pagination = document.getElementById("pagination");
 const results = document.getElementById("results");
 const jobTemplate = document.getElementById("job-template");
 
@@ -12,8 +12,18 @@ searchForm.addEventListener("submit", async (event) => {
   await loadJobs(1);
 });
 
-nextButton.addEventListener("click", async () => {
-  await loadJobs(currentPage + 1);
+pagination.addEventListener("click", async (event) => {
+  const pageButton = event.target.closest("button[data-page]");
+
+  if (!pageButton || pageButton.disabled) {
+    return;
+  }
+
+  const page = Number.parseInt(pageButton.dataset.page, 10);
+
+  if (Number.isInteger(page) && page !== currentPage) {
+    await loadJobs(page);
+  }
 });
 
 async function loadJobs(page) {
@@ -25,19 +35,95 @@ async function loadJobs(page) {
 
   showLoadingSkeleton(page);
   searchButton.disabled = true;
-  nextButton.hidden = true;
+  pagination.hidden = true;
 
   try {
-    const jobs = await fetchInternships(keyword, location, country, page);
+    const { jobs, totalResults } = await fetchInternships(
+      keyword,
+      location,
+      country,
+      page,
+    );
     currentPage = page;
     displayResults(jobs);
-    nextButton.hidden = jobs.length < resultsPerPage;
+    displayPagination(totalResults);
   } catch (error) {
+    pagination.replaceChildren();
     showMessage(error.message, "error");
   } finally {
     searchButton.disabled = false;
     results.removeAttribute("aria-busy");
   }
+}
+
+function displayPagination(totalResults) {
+  const totalPages = Math.ceil(totalResults / resultsPerPage);
+  pagination.replaceChildren();
+
+  if (totalPages <= 1) {
+    pagination.hidden = true;
+    return;
+  }
+
+  const controls = document.createDocumentFragment();
+  controls.appendChild(
+    createPaginationButton("‹", currentPage - 1, {
+      ariaLabel: "Previous page",
+      disabled: currentPage === 1,
+    }),
+  );
+
+  getVisiblePages(currentPage, totalPages).forEach((page) => {
+    if (page === currentPage) {
+      const current = document.createElement("span");
+      current.className = "pagination-page is-current";
+      current.setAttribute("aria-current", "page");
+      current.setAttribute("aria-label", `Page ${page}, current page`);
+      current.textContent = page;
+      controls.appendChild(current);
+      return;
+    }
+
+    controls.appendChild(
+      createPaginationButton(String(page), page, {
+        ariaLabel: `Go to page ${page}`,
+      }),
+    );
+  });
+
+  controls.appendChild(
+    createPaginationButton("›", currentPage + 1, {
+      ariaLabel: "Next page",
+      disabled: currentPage === totalPages,
+    }),
+  );
+
+  pagination.appendChild(controls);
+  pagination.hidden = false;
+}
+
+function getVisiblePages(page, totalPages) {
+  const visiblePageCount = 5;
+  let firstPage = Math.max(1, page - Math.floor(visiblePageCount / 2));
+  const lastPage = Math.min(totalPages, firstPage + visiblePageCount - 1);
+
+  firstPage = Math.max(1, lastPage - visiblePageCount + 1);
+
+  return Array.from(
+    { length: lastPage - firstPage + 1 },
+    (_, index) => firstPage + index,
+  );
+}
+
+function createPaginationButton(label, page, options = {}) {
+  const button = document.createElement("button");
+  button.className = "pagination-button";
+  button.type = "button";
+  button.dataset.page = page;
+  button.disabled = options.disabled || false;
+  button.setAttribute("aria-label", options.ariaLabel);
+  button.textContent = label;
+  return button;
 }
 
 function showLoadingSkeleton(page) {

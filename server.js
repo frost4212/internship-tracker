@@ -79,7 +79,10 @@ require("dotenv").config();
       }
 
       const data = await response.json();
-      res.json(data.results || []);
+      res.json({
+        jobs: data.results || [],
+        totalResults: Number(data.count) || 0,
+      });
     } catch (error) {
       console.error("Adzuna request failed:", error);
 
