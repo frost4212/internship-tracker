@@ -40,6 +40,10 @@ require("dotenv").config();
     res.sendFile(path.join(__dirname, "style.css"));
   });
 
+  app.get("/pfp.jpg", (req, res) => {
+    res.sendFile(path.join(__dirname, "pfp.jpg"));
+  });
+
   // Secure endpoint that communicates with Adzuna
   app.get("/api/internships", async (req, res) => {
     const keyword = req.query.keyword || "software engineering intern";

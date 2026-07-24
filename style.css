@@ -53,6 +53,19 @@ body {
   gap: 2px;
 }
 
+.profile-picture {
+  width: 34px;
+  height: 34px;
+  margin-left: 8px;
+  object-fit: cover;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+}
+
+.profile-picture:hover {
+  cursor: pointer;
+}
+
 .nav-links a {
   position: relative;
   display: flex;
