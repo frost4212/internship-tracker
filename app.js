@@ -6,6 +6,9 @@ const searchButton = document.getElementById("search-button");
 const pagination = document.getElementById("pagination");
 const results = document.getElementById("results");
 const jobTemplate = document.getElementById("job-template");
+const appStatus = document.getElementById("app-status");
+
+const storageKey = "internshipTracker.savedJobs";
 
 searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -164,12 +167,13 @@ function displayResults(jobs) {
   }
 
   const jobCards = document.createDocumentFragment();
+  const savedJobsAtRender = readSavedJobs();
 
   jobs.forEach((job) => {
     const card = jobTemplate.content.cloneNode(true);
+    const jobTitle = job.title || "Untitled position";
 
-    card.querySelector(".job-title").textContent =
-      job.title || "Untitled position";
+    card.querySelector(".job-title").textContent = jobTitle;
     card.querySelector(".job-company").textContent =
       job.company?.display_name || "Not listed";
     card.querySelector(".job-location").textContent =
@@ -177,6 +181,68 @@ function displayResults(jobs) {
     card.querySelector(".job-description").textContent = job.description
       ? `${job.description.substring(0, 150)}...`
       : "No description available.";
+    const saveButton = card.querySelector(".save-button");
+
+    const isInitiallySaved = savedJobsAtRender.some(
+      (savedJob) => savedJob.id === job.id,
+    );
+
+    if (isInitiallySaved) {
+      saveButton.setAttribute(
+        "aria-label",
+        `Remove ${jobTitle} from saved internships`,
+      );
+      saveButton.setAttribute("aria-pressed", "true");
+    } else {
+      saveButton.setAttribute(
+        "aria-label",
+        `Save ${jobTitle} to saved internships`,
+      );
+      saveButton.setAttribute("aria-pressed", "false");
+    }
+
+    saveButton.addEventListener("click", () => {
+      const savedJobs = readSavedJobs();
+      let isSaved = false;
+      for (let i = 0; i < savedJobs.length; i++) {
+        if (savedJobs[i].id === job.id) {
+          isSaved = true;
+          break;
+        }
+      }
+
+      if (!isSaved) {
+        const savedJob = {
+          id: job.id,
+          title: jobTitle,
+          company: job.company?.display_name || "Not listed",
+          location: job.location?.display_name || "Not listed",
+          description: job.description || "No description available.",
+          url: getSafeJobUrl(job.redirect_url),
+        };
+
+        savedJobs.push(savedJob);
+        if (writeSavedJobs(savedJobs) === true) {
+          saveButton.setAttribute(
+            "aria-label",
+            `Remove ${jobTitle} from saved internships`,
+          );
+          saveButton.setAttribute("aria-pressed", "true");
+        }
+      } else {
+        const newSavedJobs = savedJobs.filter(
+          (savedJob) => savedJob.id !== job.id,
+        );
+
+        if (writeSavedJobs(newSavedJobs) === true) {
+          saveButton.setAttribute(
+            "aria-label",
+            `Save ${jobTitle} to saved internships`,
+          );
+          saveButton.setAttribute("aria-pressed", "false");
+        }
+      }
+    });
 
     const link = card.querySelector(".job-link");
     const safeUrl = getSafeJobUrl(job.redirect_url);
@@ -207,4 +273,65 @@ function getSafeJobUrl(value) {
   } catch {
     return null;
   }
+}
+
+function readSavedJobs() {
+  try {
+    const savedData = localStorage.getItem(storageKey);
+    if (savedData !== null) {
+      const parsedData = JSON.parse(savedData);
+      if (Array.isArray(parsedData)) {
+        clearStorageError();
+        return parsedData.filter(isValidSavedJob);
+      } else {
+        showStorageError(
+          "Saved internships couldn't be loaded. Check your browser storage settings and try again.",
+        );
+        return [];
+      }
+    } else {
+      clearStorageError();
+      return [];
+    }
+  } catch (error) {
+    console.error("Could not load saved internships:", error);
+    showStorageError(
+      "Saved internships couldn't be loaded. Check your browser storage settings and try again.",
+    );
+    return [];
+  }
+}
+
+function writeSavedJobs(jobs) {
+  try {
+    const newData = JSON.stringify(jobs);
+    localStorage.setItem(storageKey, newData);
+    clearStorageError();
+    return true;
+  } catch (error) {
+    console.error("Could not save internships:", error);
+    showStorageError(
+      "Saved internships couldn't be updated. Check your browser storage settings and try again.",
+    );
+    return false;
+  }
+}
+
+function isValidSavedJob(savedJob) {
+  return (
+    savedJob !== null &&
+    typeof savedJob === "object" &&
+    (typeof savedJob.id === "string" ||
+      typeof savedJob.id === "number")
+  );
+}
+
+function showStorageError(message) {
+  appStatus.textContent = message;
+  appStatus.hidden = false;
+}
+
+function clearStorageError() {
+  appStatus.textContent = "";
+  appStatus.hidden = true;
 }

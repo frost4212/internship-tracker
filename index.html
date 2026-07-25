@@ -23,6 +23,8 @@
         </div>
     </nav>
     <main id="search">
+        <p id="app-status" class="app-status" role="alert" hidden></p>
+
         <form id="search-form" class="search-form">
             <div class="form-field">
                 <label for="keyword">Role or keyword</label>
@@ -62,7 +64,18 @@
 
         <template id="job-template">
             <article class="job-card">
-                <h3 class="job-title"></h3>
+                <header class="job-card-header">
+                    <h3 class="job-title"></h3>
+                    <button type="button" class="save-button" aria-label="Save internship" aria-pressed="false">
+                        <svg class="save-icon save-icon-plus" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 12h14"></path>
+                            <path d="M12 5v14"></path>
+                        </svg>
+                        <svg class="save-icon save-icon-check" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20 6 9 17l-5-5"></path>
+                        </svg>
+                    </button>
+                </header>
                 <p class="job-meta">
                     <span class="job-company"></span>
                     <span class="job-location"></span>

@@ -110,6 +110,21 @@ main {
   padding: 40px 20px;
 }
 
+.app-status {
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.app-status[hidden] {
+  display: none;
+}
+
 .search-form {
   display: flex;
   align-items: end;
@@ -216,7 +231,15 @@ button:disabled {
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
 
+.job-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .job-title {
+  min-width: 0;
   margin: 0 0 5px;
   color: #182230;
   font-size: 18px;
@@ -224,6 +247,70 @@ button:disabled {
   line-height: 24px;
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
+}
+
+.save-button {
+  display: inline-flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #2563eb;
+  background: transparent;
+  border: 1.5px solid #2563eb;
+  border-radius: 7px;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.save-button:hover {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #1d4ed8;
+}
+
+.save-button[aria-pressed="true"] {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.save-button[aria-pressed="true"]:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.save-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.save-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.save-icon-check {
+  display: none;
+  stroke-width: 2.75;
+}
+
+.save-button[aria-pressed="true"] .save-icon-plus {
+  display: none;
+}
+
+.save-button[aria-pressed="true"] .save-icon-check {
+  display: block;
 }
 
 .job-meta {
@@ -493,6 +580,7 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .job-card,
   .nav-links a,
+  .save-button,
   .pagination-button {
     transition: none;
   }
