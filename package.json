@@ -4,15 +4,21 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node --check server.js && node --check api.js && node --check app.js",
+    "test": "node --check server.js && node --check api.js && node --check app.js && node --test",
     "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": "^22.13.0"
+  },
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }
