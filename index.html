@@ -18,7 +18,14 @@
             <div class="nav-links">
                 <a href="#search" aria-current="page">Search</a>
                 <a href="#results">Results</a>
-                <img src="pfp.jpg" alt="Profile Picture" class="profile-picture">
+                <div class="profile-wrapper" id="profile-wrapper">
+                    <button type="button" class="profile-button" id="profile-button" aria-expanded="false" aria-label="Open profile menu" aria-controls="dropdown-panel">
+                        <img src="pfp.jpg" alt="" class="profile-picture">
+                    </button>
+                    <div class="dropdown-panel" id="dropdown-panel" hidden>
+                        <a href="saved_internships.html">Saved Internships</a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>

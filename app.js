@@ -5,29 +5,70 @@ const searchForm = document.getElementById("search-form");
 const searchButton = document.getElementById("search-button");
 const pagination = document.getElementById("pagination");
 const results = document.getElementById("results");
+const savedResults = document.getElementById("saved-results");
 const jobTemplate = document.getElementById("job-template");
 const appStatus = document.getElementById("app-status");
+const savedSearchForm = document.getElementById("saved-search-form");
+const savedKeyword = document.getElementById("saved-keyword");
+const savedLocation = document.getElementById("saved-location");
+const savedSearchNavLink = document.getElementById("saved-nav-search");
+const savedResultsNavLink = document.getElementById("saved-nav-results");
+
+const profileButton = document.getElementById("profile-button");
+const dropdownPanel = document.getElementById("dropdown-panel");
+const profileWrapper = document.getElementById("profile-wrapper");
 
 const storageKey = "internshipTracker.savedJobs";
 
-searchForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  await loadJobs(1);
-});
+if (searchForm) {
+  searchForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await loadJobs(1);
+  });
+}
 
-pagination.addEventListener("click", async (event) => {
-  const pageButton = event.target.closest("button[data-page]");
+if (pagination) {
+  pagination.addEventListener("click", async (event) => {
+    const pageButton = event.target.closest("button[data-page]");
 
-  if (!pageButton || pageButton.disabled) {
-    return;
-  }
+    if (!pageButton || pageButton.disabled) {
+      return;
+    }
 
-  const page = Number.parseInt(pageButton.dataset.page, 10);
+    const page = Number.parseInt(pageButton.dataset.page, 10);
 
-  if (Number.isInteger(page) && page !== currentPage) {
-    await loadJobs(page);
-  }
-});
+    if (Number.isInteger(page) && page !== currentPage) {
+      await loadJobs(page);
+    }
+  });
+}
+
+if (savedSearchForm) {
+  savedSearchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    searchSavedJobs();
+  });
+}
+
+if (savedResults) {
+  displaySavedJobs();
+}
+
+if (savedSearchNavLink && savedResultsNavLink) {
+  window.addEventListener("hashchange", updateSavedCurrentNavLink);
+  updateSavedCurrentNavLink();
+}
+
+function updateSavedCurrentNavLink() {
+  savedSearchNavLink.removeAttribute("aria-current");
+  savedResultsNavLink.removeAttribute("aria-current");
+
+  const currentLink =
+    window.location.hash === "#saved-results"
+      ? savedResultsNavLink
+      : savedSearchNavLink;
+  currentLink.setAttribute("aria-current", "location");
+}
 
 async function loadJobs(page) {
   const keyword =
@@ -167,7 +208,7 @@ function displayResults(jobs) {
   }
 
   const jobCards = document.createDocumentFragment();
-  const savedJobsAtRender = readSavedJobs();
+  const savedJobsAtRender = readSavedJobs() ?? [];
 
   jobs.forEach((job) => {
     const card = jobTemplate.content.cloneNode(true);
@@ -203,6 +244,11 @@ function displayResults(jobs) {
 
     saveButton.addEventListener("click", () => {
       const savedJobs = readSavedJobs();
+
+      if (savedJobs === null) {
+        return;
+      }
+
       let isSaved = false;
       for (let i = 0; i < savedJobs.length; i++) {
         if (savedJobs[i].id === job.id) {
@@ -287,7 +333,7 @@ function readSavedJobs() {
         showStorageError(
           "Saved internships couldn't be loaded. Check your browser storage settings and try again.",
         );
-        return [];
+        return null;
       }
     } else {
       clearStorageError();
@@ -298,7 +344,7 @@ function readSavedJobs() {
     showStorageError(
       "Saved internships couldn't be loaded. Check your browser storage settings and try again.",
     );
-    return [];
+    return null;
   }
 }
 
@@ -317,12 +363,134 @@ function writeSavedJobs(jobs) {
   }
 }
 
+function searchSavedJobs() {
+  const keyword = savedKeyword.value.trim().toLowerCase();
+  const location = savedLocation.value.trim().toLowerCase();
+  const savedJobs = readSavedJobs();
+
+  if (savedJobs === null) {
+    savedResults.replaceChildren();
+    return;
+  }
+
+  const filteredSavedJobs = savedJobs.filter((savedJob) => {
+    const searchableText = [
+      savedJob.title,
+      savedJob.company,
+      savedJob.location,
+      savedJob.description,
+    ]
+      .filter((value) => typeof value === "string")
+      .join(" ")
+      .toLowerCase();
+    const savedJobLocation =
+      typeof savedJob.location === "string"
+        ? savedJob.location.toLowerCase()
+        : "";
+
+    const matchesKeyword =
+      keyword.length === 0 || searchableText.includes(keyword);
+    const matchesLocation =
+      location.length === 0 || savedJobLocation.includes(location);
+
+    return matchesKeyword && matchesLocation;
+  });
+
+  const emptyMessage =
+    savedJobs.length === 0
+      ? "You haven't saved any internships yet."
+      : "No saved internships match your search.";
+
+  displaySavedJobs(filteredSavedJobs, emptyMessage);
+}
+
+function displaySavedJobs(
+  savedJobs = readSavedJobs(),
+  emptyMessage = "You haven't saved any internships yet.",
+) {
+  savedResults.replaceChildren();
+
+  if (savedJobs === null) {
+    return;
+  }
+
+  if (savedJobs.length === 0) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "saved-empty";
+    emptyState.textContent = emptyMessage;
+    savedResults.appendChild(emptyState);
+    return;
+  }
+
+  const savedJobCards = document.createDocumentFragment();
+
+  savedJobs.forEach((savedJob) => {
+    const card = jobTemplate.content.cloneNode(true);
+    const jobTitle = savedJob.title || "Untitled position";
+
+    card.querySelector(".job-title").textContent = jobTitle;
+    card.querySelector(".job-company").textContent =
+      savedJob.company || "Not listed";
+    card.querySelector(".job-location").textContent =
+      savedJob.location || "Not listed";
+    card.querySelector(".job-description").textContent = savedJob.description
+      ? `${savedJob.description.substring(0, 150)}...`
+      : "No description available.";
+    const saveButton = card.querySelector(".save-button");
+
+    saveButton.setAttribute(
+      "aria-label",
+      `Remove ${jobTitle} from saved internships`,
+    );
+    saveButton.setAttribute("aria-pressed", "true");
+
+    saveButton.addEventListener("click", () => {
+      const currentSavedJobs = readSavedJobs();
+
+      if (currentSavedJobs === null) {
+        return;
+      }
+
+      const newSavedJobs = currentSavedJobs.filter(
+        (currentSavedJob) => currentSavedJob.id !== savedJob.id,
+      );
+
+      if (writeSavedJobs(newSavedJobs) === true) {
+        if (savedSearchForm) {
+          searchSavedJobs();
+        } else {
+          displaySavedJobs();
+        }
+      }
+    });
+
+    const link = card.querySelector(".job-link");
+    const safeUrl = getSafeJobUrl(savedJob.url);
+
+    if (safeUrl) {
+      link.href = safeUrl;
+    } else {
+      link.remove();
+    }
+
+    savedJobCards.appendChild(card);
+  });
+
+  savedResults.appendChild(savedJobCards);
+}
+
 function isValidSavedJob(savedJob) {
   return (
     savedJob !== null &&
+    !Array.isArray(savedJob) &&
     typeof savedJob === "object" &&
     (typeof savedJob.id === "string" ||
-      typeof savedJob.id === "number")
+      typeof savedJob.id === "number") &&
+      typeof savedJob.title === "string" &&
+      typeof savedJob.description === "string" &&
+      typeof savedJob.location === "string" &&
+      typeof savedJob.company === "string" &&
+      (savedJob.url === null || typeof savedJob.url === "string")
   );
 }
 
@@ -335,3 +503,33 @@ function clearStorageError() {
   appStatus.textContent = "";
   appStatus.hidden = true;
 }
+
+//Dropdown menu functions
+profileButton.addEventListener("click", () => {
+  if (dropdownPanel.hidden === true) {
+    dropdownPanel.hidden = false;
+    profileButton.setAttribute("aria-expanded", true);
+    profileButton.setAttribute("aria-label", "Close profile menu");
+  } else {
+    dropdownPanel.hidden = true;
+    profileButton.setAttribute("aria-expanded", false);
+    profileButton.setAttribute("aria-label", "Open profile menu");
+  }
+});
+
+document.addEventListener("pointerdown", (event) => {
+  if (!profileWrapper.contains(event.target)) {
+    dropdownPanel.hidden = true;
+    profileButton.setAttribute("aria-expanded", false);
+    profileButton.setAttribute("aria-label", "Open profile menu");
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && dropdownPanel.hidden === false) {
+    dropdownPanel.hidden = true;
+    profileButton.setAttribute("aria-expanded", false);
+    profileButton.setAttribute("aria-label", "Open profile menu");
+    profileButton.focus();
+  }
+});

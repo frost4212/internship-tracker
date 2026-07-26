@@ -28,6 +28,10 @@ require("dotenv").config();
     res.sendFile(path.join(__dirname, "index.html"));
   });
 
+  app.get("/saved_internships.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "saved_internships.html"));
+  });
+
   app.get("/api.js", (req, res) => {
     res.sendFile(path.join(__dirname, "api.js"));
   });

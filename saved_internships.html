@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Internships</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a class="logo" href="/">Internship Tracker</a>
+            <div class="nav-links">
+                <a id="saved-nav-search" href="#saved-search" aria-current="location">Search</a>
+                <a id="saved-nav-results" href="#saved-results">Results</a>
+                <div class="profile-wrapper" id="profile-wrapper">
+                    <button type="button" class="profile-button" id="profile-button" aria-expanded="false" aria-label="Open profile menu" aria-controls="dropdown-panel">
+                        <img src="pfp.jpg" alt="" class="profile-picture">
+                    </button>
+                    <div class="dropdown-panel" id="dropdown-panel" hidden>
+                        <a href="saved_internships.html" aria-current="page">Saved Internships</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main id="saved-search">
+        <h1 class="page-title">Saved Internships</h1>
+
+        <form id="saved-search-form" class="search-form">
+            <div class="form-field">
+                <label for="saved-keyword">Role or keyword</label>
+                <input id="saved-keyword" placeholder="Title or company">
+            </div>
+
+            <div class="form-field">
+                <label for="saved-location">Location</label>
+                <input id="saved-location" placeholder="Anywhere">
+            </div>
+
+            <button id="saved-search-button" type="submit">Search saved</button>
+        </form>
+
+        <p id="app-status" class="app-status" role="alert" hidden></p>
+        <section id="saved-results" class="saved-internships" aria-live="polite"></section>
+
+        <template id="job-template">
+                <article class="job-card">
+                    <header class="job-card-header">
+                        <h3 class="job-title"></h3>
+                        <button type="button" class="save-button" aria-label="Save internship" aria-pressed="false">
+                            <svg class="save-icon save-icon-plus" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 12h14"></path>
+                                <path d="M12 5v14"></path>
+                            </svg>
+                            <svg class="save-icon save-icon-check" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                        </button>
+                    </header>
+                    <p class="job-meta">
+                        <span class="job-company"></span>
+                        <span class="job-location"></span>
+                    </p>
+                    <p class="job-description"></p>
+                    <footer class="job-card-footer">
+                        <a class="job-link" target="_blank" rel="noopener noreferrer">
+                            View details
+                        </a>
+                    </footer>
+                </article>
+        </template>
+    </main>
+</body>
+</html>
