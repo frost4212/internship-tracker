@@ -18,12 +18,20 @@ const profileButton = document.getElementById("profile-button");
 const dropdownPanel = document.getElementById("dropdown-panel");
 const profileWrapper = document.getElementById("profile-wrapper");
 
+const resultsHeader = document.getElementById("results-header");
+let latestTotalResults = null;
+const savedInternshipsHeader = document.getElementById("saved-internships-header");
+
 const storageKey = "internshipTracker.savedJobs";
 
 if (searchForm) {
+  loadJobs(1);
   searchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await loadJobs(1);
+    if (latestTotalResults !== null) {
+      resultsHeader.textContent = `Found ${latestTotalResults} Internships`;
+    }
   });
 }
 
@@ -44,6 +52,12 @@ if (pagination) {
 }
 
 if (savedSearchForm) {
+  if (savedInternshipsHeader) {
+    const savedJobs = readSavedJobs();
+    if (savedJobs !== null) {
+      savedInternshipsHeader.textContent = `Saved Internships (${savedJobs.length})`;
+    }
+  }
   savedSearchForm.addEventListener("submit", (event) => {
     event.preventDefault();
     searchSavedJobs();
@@ -71,6 +85,7 @@ function updateSavedCurrentNavLink() {
 }
 
 async function loadJobs(page) {
+  latestTotalResults = null;
   const keyword =
     document.getElementById("keyword").value.trim() ||
     "software engineering intern";
@@ -91,6 +106,7 @@ async function loadJobs(page) {
     currentPage = page;
     displayResults(jobs);
     displayPagination(totalResults);
+    latestTotalResults = totalResults;
   } catch (error) {
     pagination.replaceChildren();
     showMessage(error.message, "error");
@@ -456,6 +472,10 @@ function displaySavedJobs(
       );
 
       if (writeSavedJobs(newSavedJobs) === true) {
+        if (savedInternshipsHeader) {
+          savedInternshipsHeader.textContent =
+          `Saved Internships (${newSavedJobs.length})`;
+        }
         if (savedSearchForm) {
           searchSavedJobs();
         } else {
