@@ -6,6 +6,7 @@ const searchButton = document.getElementById("search-button");
 const pagination = document.getElementById("pagination");
 const results = document.getElementById("results");
 const savedResults = document.getElementById("saved-results");
+const savedPagination = document.getElementById("saved-pagination");
 const jobTemplate = document.getElementById("job-template");
 const appStatus = document.getElementById("app-status");
 const savedSearchForm = document.getElementById("saved-search-form");
@@ -21,6 +22,8 @@ const profileWrapper = document.getElementById("profile-wrapper");
 const resultsHeader = document.getElementById("results-header");
 let latestTotalResults = null;
 const savedInternshipsHeader = document.getElementById("saved-internships-header");
+const savedJobsPerPage = 5;
+let savedCurrentPage = 1;
 
 const storageKey = "internshipTracker.savedJobs";
 
@@ -60,12 +63,30 @@ if (savedSearchForm) {
   }
   savedSearchForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    savedCurrentPage = 1;
     searchSavedJobs();
   });
 }
 
 if (savedResults) {
-  displaySavedJobs();
+  searchSavedJobs();
+}
+
+if (savedPagination) {
+  savedPagination.addEventListener("click", (event) => {
+    const pageButton = event.target.closest("button[data-page]");
+
+    if (!pageButton || pageButton.disabled) {
+      return;
+    }
+
+    const page = Number.parseInt(pageButton.dataset.page, 10);
+
+    if (Number.isInteger(page) && page !== savedCurrentPage) {
+      savedCurrentPage = page;
+      searchSavedJobs();
+    }
+  });
 }
 
 if (savedSearchNavLink && savedResultsNavLink) {
@@ -386,6 +407,8 @@ function searchSavedJobs() {
 
   if (savedJobs === null) {
     savedResults.replaceChildren();
+    savedPagination.replaceChildren();
+    savedPagination.hidden = true;
     return;
   }
 
@@ -417,7 +440,63 @@ function searchSavedJobs() {
       ? "You haven't saved any internships yet."
       : "No saved internships match your search.";
 
-  displaySavedJobs(filteredSavedJobs, emptyMessage);
+  const totalPages = Math.ceil(filteredSavedJobs.length / savedJobsPerPage);
+  savedCurrentPage = Math.min(savedCurrentPage, Math.max(1, totalPages));
+
+  const firstJobIndex = (savedCurrentPage - 1) * savedJobsPerPage;
+  const jobsForCurrentPage = filteredSavedJobs.slice(
+    firstJobIndex,
+    firstJobIndex + savedJobsPerPage,
+  );
+
+  displaySavedJobs(jobsForCurrentPage, emptyMessage);
+  displaySavedPagination(filteredSavedJobs.length);
+}
+
+function displaySavedPagination(totalResults) {
+  const totalPages = Math.ceil(totalResults / savedJobsPerPage);
+  savedPagination.replaceChildren();
+
+  if (totalPages <= 1) {
+    savedPagination.hidden = true;
+    return;
+  }
+
+  const controls = document.createDocumentFragment();
+  controls.appendChild(
+    createPaginationButton("‹", savedCurrentPage - 1, {
+      ariaLabel: "Previous saved internships page",
+      disabled: savedCurrentPage === 1,
+    }),
+  );
+
+  getVisiblePages(savedCurrentPage, totalPages).forEach((page) => {
+    if (page === savedCurrentPage) {
+      const current = document.createElement("span");
+      current.className = "pagination-page is-current";
+      current.setAttribute("aria-current", "page");
+      current.setAttribute("aria-label", `Page ${page}, current page`);
+      current.textContent = page;
+      controls.appendChild(current);
+      return;
+    }
+
+    controls.appendChild(
+      createPaginationButton(String(page), page, {
+        ariaLabel: `Go to saved internships page ${page}`,
+      }),
+    );
+  });
+
+  controls.appendChild(
+    createPaginationButton("›", savedCurrentPage + 1, {
+      ariaLabel: "Next saved internships page",
+      disabled: savedCurrentPage === totalPages,
+    }),
+  );
+
+  savedPagination.appendChild(controls);
+  savedPagination.hidden = false;
 }
 
 function displaySavedJobs(
