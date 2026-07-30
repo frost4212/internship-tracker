@@ -88,6 +88,39 @@ test("saved search filters internships by keyword and location", async (t) => {
   );
 });
 
+test("saved internships can be viewed on multiple pages", async (t) => {
+  const jobsForPagination = Array.from({ length: 6 }, (_, index) => ({
+    id: `saved-${index + 1}`,
+    title: `Saved Internship ${index + 1}`,
+    company: "Example Company",
+    location: "Remote",
+    description: "A saved internship used to test pagination.",
+    url: `https://example.com/saved-${index + 1}`,
+  }));
+  const dom = await createPage("saved_internships.html", {
+    storedJobs: jobsForPagination,
+  });
+  t.after(() => dom.window.close());
+
+  const { document } = dom.window;
+  const savedPagination = document.getElementById("saved-pagination");
+
+  assert.equal(document.querySelectorAll(".job-card").length, 5);
+  assert.equal(savedPagination.hidden, false);
+
+  savedPagination.querySelector('button[data-page="2"]').click();
+
+  assert.equal(document.querySelectorAll(".job-card").length, 1);
+  assert.equal(
+    document.querySelector(".job-title").textContent,
+    "Saved Internship 6",
+  );
+  assert.equal(
+    savedPagination.querySelector('[aria-current="page"]').textContent,
+    "2",
+  );
+});
+
 test("removing a saved internship updates storage and the saved page", async (t) => {
   const dom = await createPage("saved_internships.html", { storedJobs: savedJobs });
   t.after(() => dom.window.close());
