@@ -396,6 +396,14 @@ function readSavedJobs() {
 }
 
 function writeSavedJobs(jobs) {
+  if (!Array.isArray(jobs)) {
+    console.error("Could not save internships: expected an array.");
+    showStorageError(
+      "Saved internships couldn't be updated because the data format was invalid.",
+    );
+    return false;
+  }
+
   try {
     const newData = JSON.stringify(jobs);
     localStorage.setItem(storageKey, newData);
