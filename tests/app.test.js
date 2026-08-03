@@ -67,6 +67,11 @@ async function finishAsyncEvent() {
   await new Promise((resolve) => setImmediate(resolve));
 }
 
+function changeStatus(dom, select, status) {
+  select.value = status;
+  select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+}
+
 test("saved search filters internships by keyword and location", async (t) => {
   const dom = await createPage("saved_internships.html", { storedJobs: savedJobs });
   t.after(() => dom.window.close());
@@ -183,6 +188,134 @@ test("a saved internship persists into a new page load", async (t) => {
       .querySelector(".save-button")
       .getAttribute("aria-pressed"),
     "true",
+  );
+});
+
+test("a changed internship status persists into a new page load", async (t) => {
+  const jobsWithStatuses = savedJobs.map((job) => ({
+    ...job,
+    status: "Applied",
+  }));
+  const firstDom = await createPage("saved_internships.html", {
+    storedJobs: jobsWithStatuses,
+  });
+  t.after(() => firstDom.window.close());
+
+  const select = firstDom.window.document.querySelector(".status-select");
+  changeStatus(firstDom, select, "Interviewing");
+
+  const storedValue = firstDom.window.localStorage.getItem(storageKey);
+  assert.equal(JSON.parse(storedValue)[0].status, "Interviewing");
+
+  const reloadedDom = await createPage("saved_internships.html", {
+    rawStoredValue: storedValue,
+  });
+  t.after(() => reloadedDom.window.close());
+
+  const reloadedSelect =
+    reloadedDom.window.document.querySelector(".status-select");
+  assert.equal(reloadedSelect.value, "Interviewing");
+  assert.equal(
+    reloadedSelect.closest(".status-control").dataset.status,
+    "Interviewing",
+  );
+});
+
+test("changing a status updates only the internship with the matching ID", async (t) => {
+  const jobsWithStatuses = [
+    { ...savedJobs[0], status: "Rejected" },
+    { ...savedJobs[1], status: "Applied" },
+  ];
+  const dom = await createPage("saved_internships.html", {
+    storedJobs: jobsWithStatuses,
+  });
+  t.after(() => dom.window.close());
+
+  const selects = dom.window.document.querySelectorAll(".status-select");
+  changeStatus(dom, selects[1], "Accepted");
+
+  const storedJobs = JSON.parse(
+    dom.window.localStorage.getItem(storageKey),
+  );
+  assert.deepEqual(
+    storedJobs.map(({ id, status }) => ({ id, status })),
+    [
+      { id: "software-1", status: "Rejected" },
+      { id: "data-1", status: "Accepted" },
+    ],
+  );
+});
+
+test("saved internships without a status default to Applied", async (t) => {
+  const dom = await createPage("saved_internships.html", {
+    storedJobs: savedJobs,
+  });
+  t.after(() => dom.window.close());
+
+  const select = dom.window.document.querySelector(".status-select");
+  assert.equal(select.value, "Applied");
+  assert.equal(select.dataset.status, "Applied");
+  assert.equal(
+    select.closest(".status-control").dataset.status,
+    "Applied",
+  );
+});
+
+test("a status change rolls back when storage writing fails", async (t) => {
+  const jobsWithStatuses = [{ ...savedJobs[0], status: "Applied" }];
+  const dom = await createPage("saved_internships.html", {
+    storedJobs: jobsWithStatuses,
+    suppressConsoleErrors: true,
+  });
+  const { document, localStorage } = dom.window;
+  const storagePrototype = Object.getPrototypeOf(localStorage);
+  const originalSetItem = storagePrototype.setItem;
+  const storedValueBeforeChange = localStorage.getItem(storageKey);
+
+  storagePrototype.setItem = () => {
+    throw new Error("Storage is unavailable.");
+  };
+  t.after(() => {
+    storagePrototype.setItem = originalSetItem;
+    dom.window.close();
+  });
+
+  const select = document.querySelector(".status-select");
+  changeStatus(dom, select, "Rejected");
+
+  assert.equal(select.value, "Applied");
+  assert.equal(select.dataset.status, "Applied");
+  assert.equal(
+    select.closest(".status-control").dataset.status,
+    "Applied",
+  );
+  assert.equal(localStorage.getItem(storageKey), storedValueBeforeChange);
+  assert.equal(document.getElementById("app-status").hidden, false);
+  assert.match(
+    document.getElementById("app-status").textContent,
+    /couldn't be updated/,
+  );
+});
+
+test("writeSavedJobs rejects a single object without changing storage", async (t) => {
+  const dom = await createPage("saved_internships.html", {
+    storedJobs: savedJobs,
+    suppressConsoleErrors: true,
+  });
+  t.after(() => dom.window.close());
+
+  const storedValueBeforeWrite =
+    dom.window.localStorage.getItem(storageKey);
+  const wasSaved = dom.window.writeSavedJobs(savedJobs[0]);
+
+  assert.equal(wasSaved, false);
+  assert.equal(
+    dom.window.localStorage.getItem(storageKey),
+    storedValueBeforeWrite,
+  );
+  assert.match(
+    dom.window.document.getElementById("app-status").textContent,
+    /data format was invalid/,
   );
 });
 
