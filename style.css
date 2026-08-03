@@ -447,6 +447,132 @@ button:disabled {
   min-height: 20px;
 }
 
+.saved-internships .job-card-footer {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-control {
+  --status-fill: #4f46e5;
+  --status-hover: #4338ca;
+  --status-focus-soft: #e0e7ff;
+  --status-text: #fff;
+  display: inline-flex;
+  align-items: center;
+  margin-right: auto;
+  order: -1;
+}
+
+.status-control[data-status="Interviewing"] {
+  --status-fill: #92400e;
+  --status-hover: #78350f;
+  --status-focus-soft: #fef3c7;
+}
+
+.status-control[data-status="Offer received"] {
+  --status-fill: #7c3aed;
+  --status-hover: #6d28d9;
+  --status-focus-soft: #ede9fe;
+}
+
+.status-control[data-status="Accepted"] {
+  --status-fill: #15803d;
+  --status-hover: #166534;
+  --status-focus-soft: #dcfce7;
+}
+
+.status-control[data-status="Rejected"] {
+  --status-fill: #b91c1c;
+  --status-hover: #991b1b;
+  --status-focus-soft: #fee2e2;
+}
+
+.status-control[data-status="Withdrawn"] {
+  --status-fill: #475569;
+  --status-hover: #334155;
+  --status-focus-soft: #e2e8f0;
+}
+
+.status-select-shell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-chevron {
+  position: absolute;
+  right: 11px;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  color: var(--status-text);
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.status-select {
+  width: auto;
+  min-width: 154px;
+  height: 34px;
+  padding: 6px 32px 6px 14px;
+  appearance: none;
+  color: var(--status-text);
+  background: var(--status-fill);
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  transition: background-color 120ms ease;
+}
+
+.status-select:hover {
+  background: var(--status-hover);
+}
+
+.status-select:focus-visible {
+  background: var(--status-fill);
+  box-shadow: 0 0 0 2px var(--status-focus-soft);
+  outline: 2px solid var(--status-fill);
+  outline-offset: 2px;
+}
+
+.status-select option {
+  background: #fff;
+  font-weight: 600;
+}
+
+.status-select option[value="Applied"] {
+  color: #4f46e5;
+}
+
+.status-select option[value="Interviewing"] {
+  color: #92400e;
+}
+
+.status-select option[value="Offer received"] {
+  color: #7c3aed;
+}
+
+.status-select option[value="Accepted"] {
+  color: #15803d;
+}
+
+.status-select option[value="Rejected"] {
+  color: #b91c1c;
+}
+
+.status-select option[value="Withdrawn"] {
+  color: #475569;
+}
+
 .job-link {
   display: inline-flex;
   align-items: center;
@@ -666,6 +792,10 @@ button:disabled {
     flex-direction: column;
   }
 
+  .status-select {
+    min-width: 148px;
+  }
+
   .country-field {
     flex: 1;
   }
@@ -675,7 +805,8 @@ button:disabled {
   .job-card,
   .nav-links > a,
   .save-button,
-  .pagination-button {
+  .pagination-button,
+  .status-select {
     transition: none;
   }
 
@@ -685,5 +816,12 @@ button:disabled {
 
   .skeleton::after {
     animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .status-select:focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
   }
 }

@@ -27,6 +27,15 @@ let savedCurrentPage = 1;
 
 const storageKey = "internshipTracker.savedJobs";
 
+const savedJobStatus = [
+  "Applied",
+  "Interviewing",
+  "Offer received",
+  "Accepted",
+  "Rejected",
+  "Withdrawn"
+];
+
 if (searchForm) {
   loadJobs(1);
   searchForm.addEventListener("submit", async (event) => {
@@ -302,6 +311,7 @@ function displayResults(jobs) {
           location: job.location?.display_name || "Not listed",
           description: job.description || "No description available.",
           url: getSafeJobUrl(job.redirect_url),
+          status: savedJobStatus[0],
         };
 
         savedJobs.push(savedJob);
@@ -532,6 +542,74 @@ function displaySavedJobs(
       ? `${savedJob.description.substring(0, 150)}...`
       : "No description available.";
     const saveButton = card.querySelector(".save-button");
+
+    const currentStatus = savedJobStatus.includes(savedJob.status)
+      ? savedJob.status
+      : savedJobStatus[0];
+    const select = document.createElement("select");
+    select.className = "status-select";
+    select.setAttribute("aria-label", `Application status for ${jobTitle}`);
+    select.dataset.status = currentStatus;
+
+    const statusControl = document.createElement("label");
+    statusControl.className = "status-control";
+    statusControl.dataset.status = currentStatus;
+
+    const statusSelectShell = document.createElement("span");
+    statusSelectShell.className = "status-select-shell";
+
+    const iconNamespace = "http://www.w3.org/2000/svg";
+    const statusChevron = document.createElementNS(iconNamespace, "svg");
+    statusChevron.classList.add("status-chevron");
+    statusChevron.setAttribute("viewBox", "0 0 12 12");
+    statusChevron.setAttribute("aria-hidden", "true");
+
+    const statusChevronPath = document.createElementNS(iconNamespace, "path");
+    statusChevronPath.setAttribute("d", "m3.25 4.75 2.75 2.75 2.75-2.75");
+    statusChevron.appendChild(statusChevronPath);
+
+    savedJobStatus.forEach((status) => {
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = status;
+      option.selected = status === currentStatus;
+      select.appendChild(option);
+    });
+
+    select.addEventListener("change", () => {
+      const previousStatus = statusControl.dataset.status;
+      const nextStatus = select.value;
+      const savedJobs = readSavedJobs();
+      if (savedJobs === null) {
+        select.value = previousStatus;
+        return;
+      }
+
+      const matchingJob = savedJobs.find(
+        (storedJob) => storedJob.id === savedJob.id,
+      );
+
+      if (matchingJob === undefined) {
+        select.value = previousStatus;
+        return;
+      }
+
+      matchingJob.status = select.value;
+      const wasSaved = writeSavedJobs(savedJobs);
+      if (!wasSaved) {
+        select.value = previousStatus;
+        return;
+      }
+
+      select.dataset.status = nextStatus;
+      statusControl.dataset.status = select.value;
+    });
+
+    statusSelectShell.append(select, statusChevron);
+    statusControl.append(statusSelectShell);
+
+    const cardFooter = card.querySelector(".job-card-footer");
+    cardFooter.append(statusControl);
 
     saveButton.setAttribute(
       "aria-label",
