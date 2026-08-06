@@ -1,5 +1,16 @@
 require("dotenv").config();
 
+  const requiredVariables = ["APP_ID", "APP_KEY"];
+  const missingVariables = requiredVariables.filter(
+    (name) => !process.env[name],
+  );
+
+  if (missingVariables.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missingVariables.join(", ")}`,
+    );
+  }
+  
   const express = require("express");
   const path = require("path");
 

@@ -1,6 +1,4 @@
 .vscode
 .agents
 .env
-.env.js
 node_modules/
-config.js
