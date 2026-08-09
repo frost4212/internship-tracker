@@ -11,7 +11,8 @@
     <script src="app.js" defer></script>
 </head>
 <body>
-    <nav class="navbar">
+    <a class="skip-link" href="#saved-search">Skip to main content</a>
+    <nav class="navbar" aria-label="Primary">
         <div class="nav-inner">
             <a class="logo" href="/">Internship Tracker</a>
             <div class="nav-links">
@@ -29,7 +30,7 @@
         </div>
     </nav>
 
-    <main id="saved-search">
+    <main id="saved-search" tabindex="-1">
         <div class="saved-page-header">
             <h1 class="page-title" id="saved-internships-header">Saved Internships</h1>
             <button
@@ -106,7 +107,7 @@
         </form>
 
         <p id="app-status" class="app-status" role="alert" hidden></p>
-        <section id="saved-results" class="saved-internships" aria-live="polite"></section>
+        <section id="saved-results" class="saved-internships" tabindex="-1" aria-labelledby="saved-internships-header" aria-live="polite"></section>
         <nav
             id="saved-pagination"
             class="pagination"
@@ -117,7 +118,7 @@
         <template id="job-template">
                 <article class="job-card">
                     <header class="job-card-header">
-                        <h3 class="job-title"></h3>
+                        <h2 class="job-title"></h2>
                         <button type="button" class="save-button" aria-label="Save internship" aria-pressed="false">
                             <svg class="save-icon save-icon-plus" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M5 12h14"></path>

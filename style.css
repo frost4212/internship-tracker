@@ -15,6 +15,28 @@ body {
   background: #f4f6f8;
 }
 
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 10px 14px;
+  color: #fff;
+  background: #111827;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+}
+
+.skip-link:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
 .navbar {
   height: 60px;
   background: #fff;
@@ -233,7 +255,7 @@ input,
 select,
 button {
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #8792a2;
   border-radius: 6px;
   font-family: inherit;
 }
@@ -247,8 +269,15 @@ select {
 }
 
 input::placeholder {
-  color: #8a94a3;
+  color: #667085;
   opacity: 1;
+}
+
+input:focus-visible,
+select:focus-visible {
+  border-color: #2563eb;
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 select {
@@ -277,6 +306,11 @@ button {
 
 button:hover {
   background: #1d4ed8;
+}
+
+button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 button:disabled {
@@ -441,6 +475,13 @@ button:disabled {
   border-radius: 8px;
 }
 
+#results-header:focus-visible,
+.saved-internships:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid #2563eb;
+  outline-offset: 5px;
+}
+
 .job-card {
   min-width: 0;
   padding: 18px 20px;
@@ -595,9 +636,9 @@ button:disabled {
 }
 
 .status-control {
-  --status-fill: #4f46e5;
-  --status-hover: #4338ca;
-  --status-focus-soft: #e0e7ff;
+  --status-fill: #475569;
+  --status-hover: #334155;
+  --status-focus-soft: #e2e8f0;
   --status-text: #fff;
   display: inline-flex;
   align-items: center;
@@ -1019,9 +1060,59 @@ button:disabled {
   }
 }
 
+@media (max-width: 400px) {
+  .nav-inner {
+    padding: 0 10px;
+  }
+
+  .logo {
+    font-size: 16px;
+  }
+
+  .nav-links > a {
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .nav-links > a[aria-current]::after {
+    right: 4px;
+    left: 4px;
+  }
+
+  .profile-wrapper {
+    margin-left: 4px;
+  }
+
+  .profile-picture {
+    width: 30px;
+    height: 30px;
+  }
+
+  main {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+
 @media (forced-colors: active) {
+  .skip-link:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  #results-header:focus-visible,
+  .saved-internships:focus-visible,
+  .manual-entry-button:focus-visible,
+  .manual-application-form input:focus-visible,
+  .manual-application-form select:focus-visible,
+  .manual-application-form textarea:focus-visible,
   .status-select:focus-visible {
     outline-color: Highlight;
     box-shadow: none;
+  }
+
+  .manual-application-form input:focus-visible,
+  .manual-application-form select:focus-visible,
+  .manual-application-form textarea:focus-visible {
+    outline: 2px solid Highlight;
   }
 }

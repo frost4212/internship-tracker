@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { readFile } = require("node:fs/promises");
 const path = require("node:path");
 const { test } = require("node:test");
+const axeCore = require("axe-core");
 const { JSDOM } = require("jsdom");
 
 const projectRoot = path.resolve(__dirname, "..");
@@ -85,6 +86,20 @@ function changeStatus(dom, select, status) {
   select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
 }
 
+async function getAccessibilityViolations(dom) {
+  dom.window.eval(axeCore.source);
+  const { violations } = await dom.window.axe.run(dom.window.document, {
+    rules: {
+      // jsdom does not calculate layout or rendered color contrast.
+      "color-contrast": { enabled: false },
+    },
+  });
+  return Array.from(violations, ({ id, nodes }) => ({
+    id,
+    nodes: nodes.length,
+  }));
+}
+
 test("saved search filters internships by keyword and location", async (t) => {
   const dom = await createPage("saved_internships.html", { storedJobs: savedJobs });
   t.after(() => dom.window.close());
@@ -143,6 +158,7 @@ test("saved internships can be viewed on multiple pages", async (t) => {
     savedPagination.querySelector('[aria-current="page"]').textContent,
     "2",
   );
+  assert.equal(document.activeElement, document.getElementById("saved-results"));
 });
 
 test("removing a saved internship updates storage and the saved page", async (t) => {
@@ -162,6 +178,7 @@ test("removing a saved internship updates storage and the saved page", async (t)
     document.querySelector(".job-title").textContent,
     "Data Analyst Intern",
   );
+  assert.equal(document.activeElement, document.getElementById("saved-results"));
 });
 
 test("a saved internship persists into a new page load", async (t) => {
@@ -409,6 +426,78 @@ test("the profile dropdown opens, closes outside, and closes with Escape", async
   assert.equal(document.activeElement, profileButton);
 });
 
+test("both pages expose accessible landmarks and heading structure", async (t) => {
+  const searchDom = await createPage("index.html", {
+    fetchInternships: async () => ({ jobs: [], totalResults: 0 }),
+  });
+  const savedDom = await createPage("saved_internships.html", {
+    storedJobs: savedJobs,
+  });
+  t.after(() => {
+    searchDom.window.close();
+    savedDom.window.close();
+  });
+  await finishAsyncEvent();
+
+  [searchDom, savedDom].forEach((dom) => {
+    const { document } = dom.window;
+    assert.equal(document.querySelector(".skip-link").textContent, "Skip to main content");
+    assert.equal(document.querySelector(".navbar").getAttribute("aria-label"), "Primary");
+    assert.equal(
+      document.getElementById("job-template").content.querySelector(".job-title").tagName,
+      "H2",
+    );
+  });
+});
+
+test("search updates move focus to the results heading", async (t) => {
+  const apiJob = {
+    id: "focus-1",
+    title: "Accessibility Intern",
+    company: { display_name: "Inclusive Labs" },
+    location: { display_name: "Remote" },
+    description: "Test accessible interfaces.",
+    redirect_url: "https://example.com/focus-1",
+  };
+  const dom = await createPage("index.html", {
+    fetchInternships: async () => ({ jobs: [apiJob], totalResults: 21 }),
+  });
+  t.after(() => dom.window.close());
+  await finishAsyncEvent();
+
+  const { document } = dom.window;
+  const form = document.getElementById("search-form");
+  const resultsHeader = document.getElementById("results-header");
+  form.dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await finishAsyncEvent();
+  assert.equal(document.activeElement, resultsHeader);
+
+  const nextPage = document.querySelector('#pagination button[data-page="2"]');
+  nextPage.focus();
+  nextPage.click();
+  await finishAsyncEvent();
+  assert.equal(document.activeElement, resultsHeader);
+});
+
+test("both pages pass automated axe checks", async (t) => {
+  const searchDom = await createPage("index.html", {
+    fetchInternships: async () => ({ jobs: [], totalResults: 0 }),
+  });
+  const savedDom = await createPage("saved_internships.html", {
+    storedJobs: savedJobs,
+  });
+  t.after(() => {
+    searchDom.window.close();
+    savedDom.window.close();
+  });
+  await finishAsyncEvent();
+
+  assert.deepEqual(await getAccessibilityViolations(searchDom), []);
+  assert.deepEqual(await getAccessibilityViolations(savedDom), []);
+});
+
 test("the header action opens and closes the manual application form", async (t) => {
   const dom = await createPage("saved_internships.html");
   t.after(() => dom.window.close());
@@ -496,6 +585,7 @@ test("submitting the manual form saves and displays a normalized application", a
   assert.equal(toggle.getAttribute("aria-expanded"), "false");
   assert.equal(document.getElementById("manual-title").value, "");
   assert.equal(statusSelect.value, "Interested");
+  assert.equal(document.activeElement, document.getElementById("saved-results"));
 });
 
 test("manual submissions with a whitespace-only title are rejected", async (t) => {

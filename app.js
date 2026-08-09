@@ -60,10 +60,7 @@ if (searchForm) {
   loadJobs(1);
   searchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await loadJobs(1);
-    if (latestTotalResults !== null) {
-      resultsHeader.textContent = `Found ${latestTotalResults} Internships`;
-    }
+    await loadJobs(1, { focusResults: true });
   });
 }
 
@@ -78,7 +75,7 @@ if (pagination) {
     const page = Number.parseInt(pageButton.dataset.page, 10);
 
     if (Number.isInteger(page) && page !== currentPage) {
-      await loadJobs(page);
+      await loadJobs(page, { focusResults: true });
     }
   });
 }
@@ -93,7 +90,7 @@ if (savedSearchForm) {
   savedSearchForm.addEventListener("submit", (event) => {
     event.preventDefault();
     savedCurrentPage = 1;
-    searchSavedJobs();
+    searchSavedJobs({ focusResults: true });
   });
 }
 
@@ -155,7 +152,7 @@ if (manualApplicationForm) {
       manualApplicationForm.hidden = true;
       manualEntryToggle.setAttribute("aria-expanded", "false");
 
-      searchSavedJobs();
+      searchSavedJobs({ focusResults: true });
     }
   });
 }
@@ -172,7 +169,7 @@ if (savedPagination) {
 
     if (Number.isInteger(page) && page !== savedCurrentPage) {
       savedCurrentPage = page;
-      searchSavedJobs();
+      searchSavedJobs({ focusResults: true });
     }
   });
 }
@@ -193,7 +190,7 @@ function updateSavedCurrentNavLink() {
   currentLink.setAttribute("aria-current", "location");
 }
 
-async function loadJobs(page) {
+async function loadJobs(page, { focusResults = false } = {}) {
   latestTotalResults = null;
   const keyword =
     document.getElementById("keyword").value.trim() ||
@@ -202,6 +199,10 @@ async function loadJobs(page) {
   const location = document.getElementById("location").value.trim();
 
   showLoadingSkeleton(page);
+  resultsHeader.textContent = "Internship search results";
+  if (focusResults) {
+    resultsHeader.focus();
+  }
   searchButton.disabled = true;
   pagination.hidden = true;
 
@@ -216,9 +217,11 @@ async function loadJobs(page) {
     displayResults(jobs);
     displayPagination(totalResults);
     latestTotalResults = totalResults;
+    resultsHeader.textContent = `Found ${totalResults} Internships`;
   } catch (error) {
     pagination.replaceChildren();
     showMessage(error.message, "error");
+    resultsHeader.textContent = "Internship search unavailable";
   } finally {
     searchButton.disabled = false;
     results.removeAttribute("aria-busy");
@@ -511,7 +514,7 @@ function writeSavedJobs(jobs) {
   }
 }
 
-function searchSavedJobs() {
+function searchSavedJobs({ focusResults = false } = {}) {
   const keyword = savedKeyword.value.trim().toLowerCase();
   const location = savedLocation.value.trim().toLowerCase();
   const savedJobs = readSavedJobs();
@@ -520,6 +523,9 @@ function searchSavedJobs() {
     savedResults.replaceChildren();
     savedPagination.replaceChildren();
     savedPagination.hidden = true;
+    if (focusResults) {
+      savedResults.focus();
+    }
     return;
   }
 
@@ -562,6 +568,9 @@ function searchSavedJobs() {
 
   displaySavedJobs(jobsForCurrentPage, emptyMessage);
   displaySavedPagination(filteredSavedJobs.length);
+  if (focusResults) {
+    savedResults.focus();
+  }
 }
 
 function displaySavedPagination(totalResults) {
@@ -736,7 +745,7 @@ function displaySavedJobs(
           `Saved Internships (${newSavedJobs.length})`;
         }
         if (savedSearchForm) {
-          searchSavedJobs();
+          searchSavedJobs({ focusResults: true });
         } else {
           displaySavedJobs();
         }
