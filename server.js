@@ -1,8 +1,31 @@
 require("dotenv").config();
 
+const express = require("express");
+const path = require("path");
+
+const defaultRequestTimeoutMs = 10_000;
+const supportedCountries = new Set([
+  "at",
+  "au",
+  "br",
+  "ca",
+  "de",
+  "es",
+  "fr",
+  "gb",
+  "in",
+  "it",
+  "nl",
+  "nz",
+  "pl",
+  "sg",
+  "us",
+]);
+
+function getAdzunaCredentials(environment = process.env) {
   const requiredVariables = ["APP_ID", "APP_KEY"];
   const missingVariables = requiredVariables.filter(
-    (name) => !process.env[name],
+    (name) => !environment[name],
   );
 
   if (missingVariables.length > 0) {
@@ -10,31 +33,31 @@ require("dotenv").config();
       `Missing required environment variables: ${missingVariables.join(", ")}`,
     );
   }
-  
-  const express = require("express");
-  const path = require("path");
+
+  return {
+    appId: environment.APP_ID,
+    appKey: environment.APP_KEY,
+  };
+}
+
+function createApp({
+  appId,
+  appKey,
+  fetchImpl = globalThis.fetch,
+  logger = console,
+  requestTimeoutMs = defaultRequestTimeoutMs,
+}) {
+  if (!appId || !appKey) {
+    throw new Error("Adzuna credentials are required to create the server.");
+  }
+
+  if (typeof fetchImpl !== "function") {
+    throw new TypeError("fetchImpl must be a function.");
+  }
 
   const app = express();
-  const port = process.env.PORT || 3000;
-  const supportedCountries = new Set([
-    "at",
-    "au",
-    "br",
-    "ca",
-    "de",
-    "es",
-    "fr",
-    "gb",
-    "in",
-    "it",
-    "nl",
-    "nz",
-    "pl",
-    "sg",
-    "us",
-  ]);
 
-  // Serve only the public frontend files
+  // Serve only the public frontend files.
   app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
   });
@@ -61,7 +84,10 @@ require("dotenv").config();
 
   // Secure endpoint that communicates with Adzuna
   app.get("/api/internships", async (req, res) => {
-    const keyword = req.query.keyword || "software engineering intern";
+    const keyword =
+      typeof req.query.keyword === "string" && req.query.keyword.trim()
+        ? req.query.keyword.trim()
+        : "software engineering intern";
     const requestedCountry =
       typeof req.query.country === "string"
         ? req.query.country.toLowerCase()
@@ -74,8 +100,8 @@ require("dotenv").config();
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
 
     const params = new URLSearchParams({
-      app_id: process.env.APP_ID,
-      app_key: process.env.APP_KEY,
+      app_id: appId,
+      app_key: appKey,
       what: keyword,
       results_per_page: "20",
     });
@@ -88,29 +114,55 @@ require("dotenv").config();
       `https://api.adzuna.com/v1/api/jobs/${country}/search/${page}?${params}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetchImpl(url, {
+        signal: AbortSignal.timeout(requestTimeoutMs),
+      });
 
       if (!response.ok) {
-        console.error(`Adzuna returned status ${response.status}`);
+        logger.error(`Adzuna returned status ${response.status}`);
         return res.status(502).json({
           error: "The internship service could not be reached.",
         });
       }
 
       const data = await response.json();
-      res.json({
-        jobs: data.results || [],
+      return res.json({
+        jobs: Array.isArray(data.results) ? data.results : [],
         totalResults: Number(data.count) || 0,
       });
     } catch (error) {
-      console.error("Adzuna request failed:", error);
+      if (error.name === "TimeoutError") {
+        return res.status(504).json({
+          error: "The internship service took too long to respond.",
+        });
+      }
 
-      res.status(500).json({
+      logger.error("Adzuna request failed:", error);
+      return res.status(500).json({
         error: "Could not load internships.",
       });
     }
   });
 
-  app.listen(port, () => {
+  return app;
+}
+
+function startServer(environment = process.env) {
+  const { appId, appKey } = getAdzunaCredentials(environment);
+  const app = createApp({ appId, appKey });
+  const port = environment.PORT || 3000;
+
+  return app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
   });
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = {
+  createApp,
+  getAdzunaCredentials,
+  startServer,
+};
