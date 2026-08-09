@@ -284,6 +284,147 @@ button:disabled {
   opacity: 0.6;
 }
 
+.saved-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.saved-page-header .page-title {
+  margin: 0;
+}
+
+.manual-entry-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  color: #182230;
+  background: #fff;
+  border: 1px solid #a7b0bd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.manual-entry-button:hover {
+  color: #111827;
+  background: #f8fafc;
+  border-color: #7f8998;
+}
+
+.manual-entry-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.manual-entry-button-icon {
+  width: 14px;
+  margin-right: 7px;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+}
+
+.manual-entry-button-icon::before {
+  content: "+";
+}
+
+.manual-entry-button[aria-expanded="true"] .manual-entry-button-icon::before {
+  content: "−";
+}
+
+.manual-application-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: -8px 0 24px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #d5dce5;
+  border-radius: 8px;
+}
+
+.manual-application-form[hidden] {
+  display: none;
+}
+
+.manual-application-form .form-field {
+  min-width: 0;
+  gap: 7px;
+}
+
+.manual-application-form input,
+.manual-application-form select,
+.manual-application-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  color: #111827;
+  background: #fff;
+  border: 1px solid #8792a2;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 22px;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.manual-application-form textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.manual-application-form input::placeholder {
+  color: #667085;
+}
+
+.manual-application-form input:focus-visible,
+.manual-application-form select:focus-visible,
+.manual-application-form textarea:focus-visible {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px #dbeafe;
+  outline: none;
+}
+
+.manual-field-wide,
+.manual-form-actions {
+  grid-column: 1 / -1;
+}
+
+.manual-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.manual-submit-button {
+  min-height: 44px;
+  padding: 0 18px;
+  color: #fff;
+  background: #182230;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.manual-submit-button:hover {
+  background: #111827;
+}
+
 #results,
 .saved-internships,
 .results-loading {
@@ -464,13 +605,37 @@ button:disabled {
   order: -1;
 }
 
-.status-control[data-status="Interviewing"] {
+.status-control[data-status="Interested"] {
+  --status-fill: #0369a1;
+  --status-hover: #075985;
+  --status-focus-soft: #e0f2fe;
+}
+
+.status-control[data-status="Preparing"] {
+  --status-fill: #1d4ed8;
+  --status-hover: #1e40af;
+  --status-focus-soft: #dbeafe;
+}
+
+.status-control[data-status="Applied"] {
+  --status-fill: #4f46e5;
+  --status-hover: #4338ca;
+  --status-focus-soft: #e0e7ff;
+}
+
+.status-control[data-status="Online Assessment"] {
+  --status-fill: #0f766e;
+  --status-hover: #115e59;
+  --status-focus-soft: #ccfbf1;
+}
+
+.status-control[data-status="Interview"] {
   --status-fill: #92400e;
   --status-hover: #78350f;
   --status-focus-soft: #fef3c7;
 }
 
-.status-control[data-status="Offer received"] {
+.status-control[data-status="Offer"] {
   --status-fill: #7c3aed;
   --status-hover: #6d28d9;
   --status-focus-soft: #ede9fe;
@@ -549,15 +714,27 @@ button:disabled {
   font-weight: 600;
 }
 
+.status-select option[value="Interested"] {
+  color: #0369a1;
+}
+
+.status-select option[value="Preparing"] {
+  color: #1d4ed8;
+}
+
 .status-select option[value="Applied"] {
   color: #4f46e5;
 }
 
-.status-select option[value="Interviewing"] {
+.status-select option[value="Online Assessment"] {
+  color: #0f766e;
+}
+
+.status-select option[value="Interview"] {
   color: #92400e;
 }
 
-.status-select option[value="Offer received"] {
+.status-select option[value="Offer"] {
   color: #7c3aed;
 }
 
@@ -792,6 +969,25 @@ button:disabled {
     flex-direction: column;
   }
 
+  .saved-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .manual-entry-button {
+    width: 100%;
+  }
+
+  .manual-application-form {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .manual-submit-button {
+    width: 100%;
+  }
+
   .status-select {
     min-width: 148px;
   }
@@ -806,7 +1002,11 @@ button:disabled {
   .nav-links > a,
   .save-button,
   .pagination-button,
-  .status-select {
+  .status-select,
+  .manual-entry-button,
+  .manual-application-form input,
+  .manual-application-form select,
+  .manual-application-form textarea {
     transition: none;
   }
 

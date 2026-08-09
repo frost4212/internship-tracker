@@ -22,19 +22,39 @@ const profileWrapper = document.getElementById("profile-wrapper");
 const resultsHeader = document.getElementById("results-header");
 let latestTotalResults = null;
 const savedInternshipsHeader = document.getElementById("saved-internships-header");
+const manualEntryToggle = document.getElementById("manual-entry-toggle");
+const manualApplicationForm = document.getElementById("manual-application-form");
+const manualStatusSelect = document.getElementById("manual-status");
 const savedJobsPerPage = 5;
 let savedCurrentPage = 1;
 
 const storageKey = "internshipTracker.savedJobs";
 
+const defaultApplicationStatus = "Interested";
 const savedJobStatus = [
+  "Interested",
+  "Preparing",
   "Applied",
-  "Interviewing",
-  "Offer received",
+  "Online Assessment",
+  "Interview",
+  "Offer",
   "Accepted",
   "Rejected",
   "Withdrawn"
 ];
+
+if (manualStatusSelect) {
+  savedJobStatus.forEach((status) => {
+    const option = document.createElement("option");
+
+    option.value = status;
+    option.textContent = status;
+
+    manualStatusSelect.appendChild(option);
+  });
+
+  manualStatusSelect.value = defaultApplicationStatus;
+}
 
 if (searchForm) {
   loadJobs(1);
@@ -79,6 +99,65 @@ if (savedSearchForm) {
 
 if (savedResults) {
   searchSavedJobs();
+}
+
+//Dropdown for manual saved job application
+if (manualEntryToggle && manualApplicationForm) {
+  manualEntryToggle.addEventListener("click", () => {
+    const isOpening = manualApplicationForm.hidden;
+    manualApplicationForm.hidden = !isOpening;
+    manualEntryToggle.setAttribute("aria-expanded", String(isOpening));
+
+    if (isOpening) {
+      manualApplicationForm.querySelector("input")?.focus();
+    }
+  });
+}
+
+if (manualApplicationForm) {
+  manualApplicationForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(manualApplicationForm);
+    const now = new Date().toISOString();
+
+    //Manual application object
+    const manualApplicationObject = {
+      id: crypto.randomUUID(),
+      title: formData.get("title").trim(),
+      company: formData.get("company").trim(),
+      location: formData.get("location").trim(),
+      description: formData.get("description").trim(),
+      url: formData.get("url").trim(),
+      status: formData.get("status"),
+      applicationDate: formData.get("applicationDate"),
+      notes: formData.get("notes").trim(),
+      createdAt: now,
+      updatedAt: now,
+      source: "manual",
+    };
+
+    const savedJobs = readSavedJobs();
+    if (savedJobs === null) {
+      return;
+    }
+
+    savedJobs.push(manualApplicationObject);
+
+    if (writeSavedJobs(savedJobs)) {
+      savedCurrentPage = 1;
+      savedInternshipsHeader.textContent = `Saved Internships (${savedJobs.length})`;
+
+      //Clear filter when writing application
+      savedKeyword.value = "";
+      savedLocation.value = "";
+
+      manualApplicationForm.reset();
+      manualApplicationForm.hidden = true;
+      manualEntryToggle.setAttribute("aria-expanded", "false");
+
+      searchSavedJobs();
+    }
+  });
 }
 
 if (savedPagination) {
@@ -303,6 +382,8 @@ function displayResults(jobs) {
         }
       }
 
+      const now = new Date().toISOString();
+
       if (!isSaved) {
         const savedJob = {
           id: job.id,
@@ -311,7 +392,12 @@ function displayResults(jobs) {
           location: job.location?.display_name || "Not listed",
           description: job.description || "No description available.",
           url: getSafeJobUrl(job.redirect_url),
-          status: savedJobStatus[0],
+          status: defaultApplicationStatus,
+          applicationDate: "",
+          notes: "",
+          createdAt: now,
+          updatedAt: now,
+          source: "adzuna",
         };
 
         savedJobs.push(savedJob);
@@ -405,6 +491,13 @@ function writeSavedJobs(jobs) {
   }
 
   try {
+    if (!jobs.every(isValidSavedJob)) {
+      showStorageError(
+        "Saved internships couldn't be updated because the data format was invalid.",
+      );
+      return false;
+    }
+
     const newData = JSON.stringify(jobs);
     localStorage.setItem(storageKey, newData);
     clearStorageError();
@@ -553,7 +646,7 @@ function displaySavedJobs(
 
     const currentStatus = savedJobStatus.includes(savedJob.status)
       ? savedJob.status
-      : savedJobStatus[0];
+      : defaultApplicationStatus;
     const select = document.createElement("select");
     select.className = "status-select";
     select.setAttribute("aria-label", `Application status for ${jobTitle}`);
@@ -603,6 +696,7 @@ function displaySavedJobs(
       }
 
       matchingJob.status = select.value;
+      matchingJob.updatedAt = new Date().toISOString();
       const wasSaved = writeSavedJobs(savedJobs);
       if (!wasSaved) {
         select.value = previousStatus;
@@ -672,9 +766,19 @@ function isValidSavedJob(savedJob) {
     (typeof savedJob.id === "string" ||
       typeof savedJob.id === "number") &&
       typeof savedJob.title === "string" &&
+      savedJob.title.trim().length > 0 &&
       typeof savedJob.description === "string" &&
       typeof savedJob.location === "string" &&
       typeof savedJob.company === "string" &&
+      savedJob.company.trim().length > 0 &&
+      savedJobStatus.includes(savedJob.status) &&
+      typeof savedJob.applicationDate === "string" &&
+      typeof savedJob.notes === "string" &&
+      typeof savedJob.createdAt === "string" &&
+      !Number.isNaN(Date.parse(savedJob.createdAt)) &&
+      typeof savedJob.updatedAt === "string" &&
+      !Number.isNaN(Date.parse(savedJob.updatedAt)) &&
+      (savedJob.source === "adzuna" || savedJob.source === "manual") &&
       (savedJob.url === null || typeof savedJob.url === "string")
   );
 }

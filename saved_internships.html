@@ -30,7 +30,66 @@
     </nav>
 
     <main id="saved-search">
-        <h1 class="page-title" id="saved-internships-header">Saved Internships</h1>
+        <div class="saved-page-header">
+            <h1 class="page-title" id="saved-internships-header">Saved Internships</h1>
+            <button
+                class="manual-entry-button"
+                id="manual-entry-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="manual-application-form"
+            >
+                <span class="manual-entry-button-icon" aria-hidden="true"></span>
+                Add application
+            </button>
+        </div>
+
+        <form class="manual-application-form" id="manual-application-form" hidden>
+            <div class="form-field">
+                <label for="manual-title">Job title</label>
+                <input id="manual-title" name="title" placeholder="Software Engineering Intern" required>
+            </div>
+
+            <div class="form-field">
+                <label for="manual-company">Company</label>
+                <input id="manual-company" name="company" placeholder="Company name" required>
+            </div>
+
+            <div class="form-field">
+                <label for="manual-location">Location</label>
+                <input id="manual-location" name="location" placeholder="City or remote">
+            </div>
+
+            <div class="form-field">
+                <label for="manual-status">Status</label>
+                <select id="manual-status" name="status" required>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="manual-url">Posting URL</label>
+                <input id="manual-url" name="url" placeholder="https://example.com/job" type="url">
+            </div>
+
+            <div class="form-field">
+                <label for="manual-application-date">Application date</label>
+                <input id="manual-application-date" name="applicationDate" type="date">
+            </div>
+
+            <div class="form-field manual-field-wide">
+                <label for="manual-description">Role description</label>
+                <textarea id="manual-description" name="description" rows="4"></textarea>
+            </div>
+
+            <div class="form-field manual-field-wide">
+                <label for="manual-notes">Notes</label>
+                <textarea id="manual-notes" name="notes" rows="4"></textarea>
+            </div>
+
+            <div class="manual-form-actions">
+                <button class="manual-submit-button" type="submit">Save application</button>
+            </div>
+        </form>
 
         <form id="saved-search-form" class="search-form">
             <div class="form-field">
