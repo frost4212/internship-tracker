@@ -557,6 +557,11 @@ function searchSavedJobs({ focusResults = false } = {}) {
   const location = savedLocation.value.trim().toLowerCase();
   const savedJobs = readSavedJobs();
 
+  const requestedStatus = new URLSearchParams(window.location.search).get("status");
+  const statusFilter = savedJobStatus.includes(requestedStatus)
+    ? requestedStatus
+    : "";
+
   if (savedJobs === null) {
     savedResults.replaceChildren();
     savedPagination.replaceChildren();
@@ -587,7 +592,10 @@ function searchSavedJobs({ focusResults = false } = {}) {
     const matchesLocation =
       location.length === 0 || savedJobLocation.includes(location);
 
-    return matchesKeyword && matchesLocation;
+    const matchesStatus =
+    statusFilter === "" || savedJob.status === statusFilter;
+
+    return matchesKeyword && matchesLocation && matchesStatus;
   });
 
   const emptyMessage =
@@ -870,3 +878,37 @@ document.addEventListener("keydown", (event) => {
     profileButton.focus();
   }
 });
+
+const totalSavedJobs = document.getElementById("total-saved-jobs");
+const statusCountElements = document.querySelectorAll("[data-status-count]");
+
+if (totalSavedJobs || statusCountElements.length > 0) {
+  const savedJobs = readSavedJobs();
+
+  if (savedJobs === null) {
+    if (totalSavedJobs) {
+      totalSavedJobs.textContent = "-";
+    }
+
+    statusCountElements.forEach((element) => {
+      element.textContent = "-";
+    });
+  } else {
+    if (totalSavedJobs) {
+      totalSavedJobs.textContent = String(savedJobs.length);
+    }
+
+    const statusCounts = Object.fromEntries(
+      savedJobStatus.map((status) => [status, 0]),
+    );
+
+    savedJobs.forEach((job) => {
+      statusCounts[job.status] += 1;
+    });
+
+    statusCountElements.forEach((element) => {
+      const status = element.dataset.statusCount;
+      element.textContent = String(statusCounts[status] ?? 0);
+    });
+  }
+}

@@ -46,6 +46,7 @@ async function createPage(
     storedJobs,
     rawStoredValue,
     fetchInternships,
+    urlSearch = "",
     suppressConsoleErrors = false,
   } = {},
 ) {
@@ -56,7 +57,7 @@ async function createPage(
   const urlPath = fileName === "index.html" ? "" : fileName;
   const dom = new JSDOM(html, {
     runScripts: "outside-only",
-    url: `http://localhost/${urlPath}`,
+    url: `http://localhost/${urlPath}${urlSearch}`,
   });
 
   const dialogPrototype = dom.window.HTMLDialogElement?.prototype;
@@ -140,6 +141,79 @@ test("saved search filters internships by keyword and location", async (t) => {
   assert.equal(
     cards[0].querySelector(".job-title").textContent,
     "Data Analyst Intern",
+  );
+});
+
+test("saved internships can be filtered by a dashboard status URL", async (t) => {
+  const jobsWithDifferentStatuses = [
+    savedJobs[0],
+    {
+      ...savedJobs[1],
+      id: "interview-1",
+      title: "Interview Stage Intern",
+      status: "Interview",
+    },
+  ];
+  const dom = await createPage("saved_internships.html", {
+    storedJobs: jobsWithDifferentStatuses,
+    urlSearch: "?status=Interview",
+  });
+  t.after(() => dom.window.close());
+
+  const cards = dom.window.document.querySelectorAll(".job-card");
+  assert.equal(cards.length, 1);
+  assert.equal(
+    cards[0].querySelector(".job-title").textContent,
+    "Interview Stage Intern",
+  );
+  assert.equal(cards[0].querySelector(".status-select").value, "Interview");
+});
+
+test("dashboard displays total and per-status application counts", async (t) => {
+  const statuses = [
+    "Interested",
+    "Preparing",
+    "Applied",
+    "Online Assessment",
+    "Interview",
+    "Offer",
+    "Accepted",
+    "Rejected",
+    "Withdrawn",
+  ];
+  const dashboardJobs = statuses.map((status, index) => ({
+    ...savedJobs[index % savedJobs.length],
+    id: `dashboard-${index}`,
+    title: `${status} Internship`,
+    status,
+  }));
+  dashboardJobs.push({
+    ...savedJobs[0],
+    id: "dashboard-second-interview",
+    title: "Second Interview Internship",
+    status: "Interview",
+  });
+
+  const dom = await createPage("dashboard.html", {
+    storedJobs: dashboardJobs,
+  });
+  t.after(() => dom.window.close());
+
+  const { document } = dom.window;
+  assert.equal(document.getElementById("total-saved-jobs").textContent, "10");
+
+  statuses.forEach((status) => {
+    const expectedCount = status === "Interview" ? "2" : "1";
+    const count = document.querySelector(`[data-status-count="${status}"]`);
+    const link = document.querySelector(`.dashboard-status[data-status="${status}"]`);
+
+    assert.equal(count.textContent, expectedCount);
+    assert.equal(new URL(link.href).searchParams.get("status"), status);
+  });
+
+  assert.equal(
+    new URL(document.querySelector(".dashboard-total-link").href).pathname,
+    "/saved_internships.html",
   );
 });
 
@@ -541,21 +615,26 @@ test("search updates move focus to the results heading", async (t) => {
   assert.equal(document.activeElement, resultsHeader);
 });
 
-test("both pages pass automated axe checks", async (t) => {
+test("all pages pass automated axe checks", async (t) => {
   const searchDom = await createPage("index.html", {
     fetchInternships: async () => ({ jobs: [], totalResults: 0 }),
   });
   const savedDom = await createPage("saved_internships.html", {
     storedJobs: savedJobs,
   });
+  const dashboardDom = await createPage("dashboard.html", {
+    storedJobs: savedJobs,
+  });
   t.after(() => {
     searchDom.window.close();
     savedDom.window.close();
+    dashboardDom.window.close();
   });
   await finishAsyncEvent();
 
   assert.deepEqual(await getAccessibilityViolations(searchDom), []);
   assert.deepEqual(await getAccessibilityViolations(savedDom), []);
+  assert.deepEqual(await getAccessibilityViolations(dashboardDom), []);
 });
 
 test("the header action opens and closes the manual application form", async (t) => {

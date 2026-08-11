@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="api.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#dashboard-main">Skip to main content</a>
+    <nav class="navbar" aria-label="Primary">
+        <div class="nav-inner">
+            <a class="logo" href="/">Internship Tracker</a>
+            <div class="nav-links">
+                <a aria-current="page">Dashboard</a>
+                <div class="profile-wrapper" id="profile-wrapper">
+                    <button type="button" class="profile-button" id="profile-button" aria-expanded="false" aria-label="Open profile menu" aria-controls="dropdown-panel">
+                        <img src="pfp.jpg" alt="" class="profile-picture">
+                    </button>
+                    <div class="dropdown-panel" id="dropdown-panel" hidden>
+                        <a href="dashboard.html" aria-current="page">Dashboard</a>
+                        <a href="saved_internships.html">Saved Internships</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-main" id="dashboard-main" tabindex="-1">
+        <p id="app-status" class="app-status" role="alert" hidden></p>
+        <header class="dashboard-header">
+            <h1>Dashboard</h1>
+            <p>Overview of your current applications.</p>
+        </header>
+
+        <section class="dashboard-summary" aria-labelledby="application-summary-heading">
+            <header class="dashboard-summary-header">
+                <h2 id="application-summary-heading">Applications</h2>
+                <a href="saved_internships.html">
+                    View all applications <span aria-hidden="true">&rarr;</span>
+                </a>
+            </header>
+
+            <div class="dashboard-summary-body">
+                <div class="dashboard-total">
+                    <a class="dashboard-total-link" href="saved_internships.html">
+                        <strong class="dashboard-total-count total-saved-jobs" id="total-saved-jobs">0</strong>
+                        <span class="dashboard-total-label">Total applications</span>
+                    </a>
+                </div>
+
+                <div class="dashboard-pipeline" aria-label="Application stages">
+                    <a class="dashboard-status" data-status="Interested" href="saved_internships.html?status=Interested">
+                        <span class="dashboard-status-label">Interested</span>
+                        <strong class="dashboard-status-count" data-status-count="Interested">0</strong>
+                    </a>
+                    <a class="dashboard-status" data-status="Preparing" href="saved_internships.html?status=Preparing">
+                        <span class="dashboard-status-label">Preparing</span>
+                        <strong class="dashboard-status-count" data-status-count="Preparing">0</strong>
+                    </a>
+                    <a class="dashboard-status" data-status="Applied" href="saved_internships.html?status=Applied">
+                        <span class="dashboard-status-label">Applied</span>
+                        <strong class="dashboard-status-count" data-status-count="Applied">0</strong>
+                    </a>
+                    <a class="dashboard-status" data-status="Online Assessment" href="saved_internships.html?status=Online%20Assessment">
+                        <span class="dashboard-status-label">Assessment</span>
+                        <strong class="dashboard-status-count" data-status-count="Online Assessment">0</strong>
+                    </a>
+                    <a class="dashboard-status" data-status="Interview" href="saved_internships.html?status=Interview">
+                        <span class="dashboard-status-label">Interview</span>
+                        <strong class="dashboard-status-count" data-status-count="Interview">0</strong>
+                    </a>
+                    <a class="dashboard-status" data-status="Offer" href="saved_internships.html?status=Offer">
+                        <span class="dashboard-status-label">Offer</span>
+                        <strong class="dashboard-status-count" data-status-count="Offer">0</strong>
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-outcomes" aria-label="Application outcomes">
+                <a class="dashboard-status" data-status="Accepted" href="saved_internships.html?status=Accepted">
+                    <span class="dashboard-status-label">Accepted</span>
+                    <strong class="dashboard-status-count" data-status-count="Accepted">0</strong>
+                </a>
+                <a class="dashboard-status" data-status="Rejected" href="saved_internships.html?status=Rejected">
+                    <span class="dashboard-status-label">Rejected</span>
+                    <strong class="dashboard-status-count" data-status-count="Rejected">0</strong>
+                </a>
+                <a class="dashboard-status" data-status="Withdrawn" href="saved_internships.html?status=Withdrawn">
+                    <span class="dashboard-status-label">Withdrawn</span>
+                    <strong class="dashboard-status-count" data-status-count="Withdrawn">0</strong>
+                </a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -66,6 +66,10 @@ function createApp({
     res.sendFile(path.join(__dirname, "saved_internships.html"));
   });
 
+  app.get("/dashboard.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "dashboard.html"));
+  });
+
   app.get("/api.js", (req, res) => {
     res.sendFile(path.join(__dirname, "api.js"));
   });
