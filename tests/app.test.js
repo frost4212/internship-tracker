@@ -59,6 +59,28 @@ async function createPage(
     url: `http://localhost/${urlPath}`,
   });
 
+  const dialogPrototype = dom.window.HTMLDialogElement?.prototype;
+  if (dialogPrototype && typeof dialogPrototype.showModal !== "function") {
+    const previouslyFocusedElements = new WeakMap();
+
+    dialogPrototype.showModal = function showModal() {
+      previouslyFocusedElements.set(this, this.ownerDocument.activeElement);
+      this.open = true;
+      this.querySelector("[autofocus]")?.focus();
+    };
+
+    dialogPrototype.close = function close(returnValue = "") {
+      if (!this.open) {
+        return;
+      }
+
+      this.returnValue = String(returnValue);
+      this.open = false;
+      previouslyFocusedElements.get(this)?.focus();
+      this.dispatchEvent(new dom.window.Event("close"));
+    };
+  }
+
   if (rawStoredValue !== undefined) {
     dom.window.localStorage.setItem(storageKey, rawStoredValue);
   } else if (storedJobs !== undefined) {
@@ -179,6 +201,44 @@ test("removing a saved internship updates storage and the saved page", async (t)
     "Data Analyst Intern",
   );
   assert.equal(document.activeElement, document.getElementById("saved-results"));
+});
+
+test("clearing saved internships requires confirmation and refreshes the page", async (t) => {
+  const dom = await createPage("saved_internships.html", { storedJobs: savedJobs });
+  t.after(() => dom.window.close());
+
+  const { document, localStorage } = dom.window;
+  const clearButton = document.getElementById("clear-btn");
+  const confirmMenu = document.getElementById("confirm-menu");
+  const cancelButton = document.getElementById("clear-cancel-btn");
+  const confirmButton = document.getElementById("confirm-clear-btn");
+
+  clearButton.focus();
+  clearButton.click();
+  assert.equal(confirmMenu.open, true);
+  assert.notEqual(localStorage.getItem(storageKey), null);
+  assert.equal(document.activeElement, cancelButton);
+
+  cancelButton.click();
+  assert.equal(confirmMenu.open, false);
+  assert.notEqual(localStorage.getItem(storageKey), null);
+  assert.equal(document.activeElement, clearButton);
+
+  clearButton.click();
+  confirmButton.click();
+  assert.equal(localStorage.getItem(storageKey), null);
+
+  const reloadedDom = await createPage("saved_internships.html");
+  t.after(() => reloadedDom.window.close());
+
+  const reloadedDocument = reloadedDom.window.document;
+  assert.equal(reloadedDocument.getElementById("confirm-menu").open, false);
+  assert.equal(reloadedDocument.querySelectorAll(".job-card").length, 0);
+  assert.equal(reloadedDocument.getElementById("clear-btn").hidden, true);
+  assert.equal(
+    reloadedDocument.getElementById("saved-internships-header").textContent,
+    "Saved Internships (0)",
+  );
 });
 
 test("a saved internship persists into a new page load", async (t) => {

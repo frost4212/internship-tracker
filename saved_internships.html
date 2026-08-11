@@ -33,16 +33,29 @@
     <main id="saved-search" tabindex="-1">
         <div class="saved-page-header">
             <h1 class="page-title" id="saved-internships-header">Saved Internships</h1>
-            <button
-                class="manual-entry-button"
-                id="manual-entry-toggle"
-                type="button"
-                aria-expanded="false"
-                aria-controls="manual-application-form"
-            >
-                <span class="manual-entry-button-icon" aria-hidden="true"></span>
-                Add application
-            </button>
+            <div class="saved-page-actions">
+                <button
+                    class="manual-entry-button"
+                    id="manual-entry-toggle"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="manual-application-form"
+                >
+                    <span class="manual-entry-button-icon" aria-hidden="true"></span>
+                    Add application
+                </button>
+                <button
+                    type="button"
+                    class="clear-btn"
+                    id="clear-btn"
+                    aria-controls="confirm-menu"
+                >
+                    <svg class="clear-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path>
+                    </svg>
+                    Clear all
+                </button>
+            </div>
         </div>
 
         <form class="manual-application-form" id="manual-application-form" hidden>
@@ -105,6 +118,24 @@
 
             <button id="saved-search-button" type="submit">Search saved</button>
         </form>
+
+        <dialog
+            class="confirm-dialog"
+            id="confirm-menu"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="confirm-menu-title"
+            aria-describedby="confirm-menu-description"
+        >
+            <div class="confirm-dialog-content">
+                <h2 id="confirm-menu-title">Clear saved internships?</h2>
+                <p id="confirm-menu-description">This will permanently remove every saved internship from this browser.</p>
+                <div class="confirm-dialog-actions">
+                    <button class="confirm-cancel-btn" id="clear-cancel-btn" type="button" autofocus>Cancel</button>
+                    <button class="confirm-clear-btn" id="confirm-clear-btn" type="button">Clear all</button>
+                </div>
+            </div>
+        </dialog>
 
         <p id="app-status" class="app-status" role="alert" hidden></p>
         <section id="saved-results" class="saved-internships" tabindex="-1" aria-labelledby="saved-internships-header" aria-live="polite"></section>

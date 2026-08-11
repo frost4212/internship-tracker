@@ -28,6 +28,11 @@ const manualStatusSelect = document.getElementById("manual-status");
 const savedJobsPerPage = 5;
 let savedCurrentPage = 1;
 
+const clearButton = document.getElementById("clear-btn");
+const confirmMenu = document.getElementById("confirm-menu");
+const clearCancelButton = document.getElementById("clear-cancel-btn");
+const confirmClearButton = document.getElementById("confirm-clear-btn");
+
 const storageKey = "internshipTracker.savedJobs";
 
 const defaultApplicationStatus = "Interested";
@@ -151,8 +156,41 @@ if (manualApplicationForm) {
       manualApplicationForm.reset();
       manualApplicationForm.hidden = true;
       manualEntryToggle.setAttribute("aria-expanded", "false");
+      clearButton.hidden = false;
 
       searchSavedJobs({ focusResults: true });
+    }
+  });
+}
+
+if (clearButton && confirmMenu && clearCancelButton && confirmClearButton) {
+  const savedJobs = readSavedJobs();
+  if (savedJobs === null || savedJobs.length === 0) {
+    clearButton.hidden = true;
+  }
+
+  clearButton.addEventListener("click", () => {
+    confirmMenu.showModal();
+  });
+
+  confirmClearButton.addEventListener("click", () => {
+    try{
+      localStorage.removeItem(storageKey);
+      location.reload();
+    } catch (error) {
+      console.error("Could not clear saved internships:", error);
+      confirmMenu.close();
+      showStorageError("Saved internships couldn't be cleared. Check your browser storage settings and try again.");
+    }
+  });
+
+  clearCancelButton.addEventListener("click", () => {
+    confirmMenu.close();
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (event.target === confirmMenu) {
+      confirmMenu.close();
     }
   });
 }
@@ -740,6 +778,7 @@ function displaySavedJobs(
       );
 
       if (writeSavedJobs(newSavedJobs) === true) {
+        clearButton.hidden = newSavedJobs.length === 0;
         if (savedInternshipsHeader) {
           savedInternshipsHeader.textContent =
           `Saved Internships (${newSavedJobs.length})`;
