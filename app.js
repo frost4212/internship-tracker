@@ -1,5 +1,7 @@
 const resultsPerPage = 20;
+const successStatusDurationMs = 5000;
 let currentPage = 1;
+let appStatusTimeoutId = null;
 
 const searchForm = document.getElementById("search-form");
 const searchButton = document.getElementById("search-button");
@@ -14,6 +16,14 @@ const savedKeyword = document.getElementById("saved-keyword");
 const savedLocation = document.getElementById("saved-location");
 const savedSearchNavLink = document.getElementById("saved-nav-search");
 const savedResultsNavLink = document.getElementById("saved-nav-results");
+const jobDetail = document.getElementById("job-detail");
+const jobDetailEmpty = document.getElementById("job-detail-empty");
+const jobDetailForm = document.getElementById("job-detail-form");
+const jobStatusSelect = document.getElementById("job-status");
+const jobDeleteButton = document.getElementById("job-delete-button");
+const jobDeleteDialog = document.getElementById("job-delete-dialog");
+const jobDeleteCancel = document.getElementById("job-delete-cancel");
+const jobDeleteConfirm = document.getElementById("job-delete-confirm");
 
 const profileButton = document.getElementById("profile-button");
 const dropdownPanel = document.getElementById("dropdown-panel");
@@ -30,8 +40,12 @@ let savedCurrentPage = 1;
 
 const clearButton = document.getElementById("clear-btn");
 const confirmMenu = document.getElementById("confirm-menu");
+
 const clearCancelButton = document.getElementById("clear-cancel-btn");
 const confirmClearButton = document.getElementById("confirm-clear-btn");
+
+const totalSavedJobs = document.getElementById("total-saved-jobs");
+const statusCountElements = document.querySelectorAll("[data-status-count]");
 
 const storageKey = "internshipTracker.savedJobs";
 
@@ -49,16 +63,7 @@ const savedJobStatus = [
 ];
 
 if (manualStatusSelect) {
-  savedJobStatus.forEach((status) => {
-    const option = document.createElement("option");
-
-    option.value = status;
-    option.textContent = status;
-
-    manualStatusSelect.appendChild(option);
-  });
-
-  manualStatusSelect.value = defaultApplicationStatus;
+  populateStatusSelect(manualStatusSelect, defaultApplicationStatus);
 }
 
 if (searchForm) {
@@ -724,13 +729,7 @@ function displaySavedJobs(
     statusChevronPath.setAttribute("d", "m3.25 4.75 2.75 2.75 2.75-2.75");
     statusChevron.appendChild(statusChevronPath);
 
-    savedJobStatus.forEach((status) => {
-      const option = document.createElement("option");
-      option.value = status;
-      option.textContent = status;
-      option.selected = status === currentStatus;
-      select.appendChild(option);
-    });
+    populateStatusSelect(select, currentStatus);
 
     select.addEventListener("change", () => {
       const previousStatus = statusControl.dataset.status;
@@ -800,13 +799,10 @@ function displaySavedJobs(
     });
 
     const link = card.querySelector(".job-link");
-    const safeUrl = getSafeJobUrl(savedJob.url);
-
-    if (safeUrl) {
-      link.href = safeUrl;
-    } else {
-      link.remove();
-    }
+    link.href = `job.html?id=${encodeURIComponent(String(savedJob.id))}`;
+    link.textContent = "View application";
+    link.removeAttribute("target");
+    link.removeAttribute("rel");
 
     savedJobCards.appendChild(card);
   });
@@ -839,13 +835,59 @@ function isValidSavedJob(savedJob) {
   );
 }
 
-function showStorageError(message) {
+function populateStatusSelect(select, selectedStatus) {
+  select.replaceChildren();
+
+  savedJobStatus.forEach((status) => {
+    const option = document.createElement("option");
+    option.value = status;
+    option.textContent = status;
+    select.appendChild(option);
+  });
+
+  select.value = selectedStatus;
+}
+
+function clearAppStatusTimeout() {
+  clearTimeout(appStatusTimeoutId);
+  appStatusTimeoutId = null;
+}
+
+function setAppStatusMessage(message) {
+  const messageElement = appStatus.querySelector(".app-status-message");
+  if (messageElement) {
+    messageElement.textContent = message;
+    return;
+  }
+
   appStatus.textContent = message;
+}
+
+function showSuccessStatus(message) {
+  clearAppStatusTimeout();
+  appStatus.classList.add("is-success");
+  setAppStatusMessage(message);
+  appStatus.hidden = false;
+
+  appStatusTimeoutId = setTimeout(() => {
+    appStatus.classList.remove("is-success");
+    setAppStatusMessage("");
+    appStatus.hidden = true;
+    appStatusTimeoutId = null;
+  }, successStatusDurationMs);
+}
+
+function showStorageError(message) {
+  clearAppStatusTimeout();
+  appStatus.classList.remove("is-success");
+  setAppStatusMessage(message);
   appStatus.hidden = false;
 }
 
 function clearStorageError() {
-  appStatus.textContent = "";
+  clearAppStatusTimeout();
+  appStatus.classList.remove("is-success");
+  setAppStatusMessage("");
   appStatus.hidden = true;
 }
 
@@ -879,9 +921,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-const totalSavedJobs = document.getElementById("total-saved-jobs");
-const statusCountElements = document.querySelectorAll("[data-status-count]");
-
 if (totalSavedJobs || statusCountElements.length > 0) {
   const savedJobs = readSavedJobs();
 
@@ -912,3 +951,123 @@ if (totalSavedJobs || statusCountElements.length > 0) {
     });
   }
 }
+
+function loadJobDetails() {
+  if (jobDetail) {
+    const jobTitle = document.getElementById("job-title");
+    const jobCompany = document.getElementById("job-company");
+    const jobLocation = document.getElementById("job-location");
+    const jobDescription = document.getElementById("job-description");
+    const jobNotes = document.getElementById("job-notes");
+    const jobApplicationDate = document.getElementById("job-application-date");
+    const jobCreatedAt = document.getElementById("job-created-at");
+    const jobUpdatedAt = document.getElementById("job-updated-at");
+    const jobSource = document.getElementById("job-source");
+    const jobPostingLink = document.getElementById("job-posting-link");
+
+    jobDetail.hidden = false;
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    const savedJobs = readSavedJobs();
+
+    if (savedJobs === null) {
+      jobDetail.hidden = true;
+      jobDetailEmpty.hidden = true;
+      return;
+    }
+
+    const job = savedJobs.find((job) => String(job.id) === id);
+
+    if (job === undefined) {
+      jobDetail.hidden = true;
+      jobDetailEmpty.hidden = false;
+      document.title = "Application not found | Internship Tracker";
+      return;
+    }
+
+    // Display job properties
+    jobTitle.textContent = job.title;
+    jobCompany.textContent = job.company;
+    jobLocation.textContent = getDisplayValue(job.location, "No location");
+    jobDescription.textContent = getDisplayValue(job.description, "No description");
+    jobNotes.value = getDisplayValue(job.notes, "");
+    jobApplicationDate.value = getDisplayValue(job.applicationDate, "");
+    jobCreatedAt.textContent = formatJobDate(job.createdAt);
+    jobUpdatedAt.textContent = formatJobDate(job.updatedAt);
+    jobSource.textContent = getDisplayValue(job.source, "Not recorded");
+
+    const safeUrl = getSafeJobUrl(job.url);
+    if (safeUrl) {
+      jobPostingLink.href = safeUrl;
+      jobPostingLink.hidden = false;
+    } else {
+      jobPostingLink.removeAttribute("href");
+      jobPostingLink.hidden = true;
+    }
+
+    populateStatusSelect(jobStatusSelect, job.status);
+
+    jobDetailForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      job.status = jobStatusSelect.value;
+      job.applicationDate = jobApplicationDate.value;
+      job.notes = jobNotes.value.trim();
+
+      const now = new Date().toISOString();
+      job.updatedAt = now;
+      if (writeSavedJobs(savedJobs)) {
+        jobUpdatedAt.textContent = formatJobDate(job.updatedAt);
+        showSuccessStatus("Changes saved.");
+      }
+    });
+
+    jobDeleteButton.addEventListener("click", () => {
+      jobDeleteDialog.showModal();
+    });
+
+    jobDeleteConfirm.addEventListener("click", () => {
+      const remainingJobs = savedJobs.filter(
+        (savedJob) => String(savedJob.id) !== id,
+      );
+
+      if (writeSavedJobs(remainingJobs)) {
+        window.location.href = "saved_internships.html";
+      } else {
+        jobDeleteDialog.close();
+      }
+    });
+
+    jobDeleteCancel.addEventListener("click", () => {
+      jobDeleteDialog.close();
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (event.target === jobDeleteDialog) {
+        jobDeleteDialog.close();
+      }
+    });
+  }
+}
+
+function getDisplayValue(value, fallback) {
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : fallback;
+}
+
+function formatJobDate(dateString) {
+  const date = new Date(dateString);
+
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+loadJobDetails();

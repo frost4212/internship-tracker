@@ -48,6 +48,7 @@ async function createPage(
     fetchInternships,
     urlSearch = "",
     suppressConsoleErrors = false,
+    setTimeoutImplementation,
   } = {},
 ) {
   const [html, appScript] = await Promise.all([
@@ -94,6 +95,10 @@ async function createPage(
 
   if (suppressConsoleErrors) {
     dom.window.console.error = () => {};
+  }
+
+  if (setTimeoutImplementation) {
+    dom.window.setTimeout = setTimeoutImplementation;
   }
 
   dom.window.eval(appScript);
@@ -369,6 +374,157 @@ test("a saved internship persists into a new page load", async (t) => {
   );
 });
 
+test("saved application cards link to the application detail page", async (t) => {
+  const dom = await createPage("saved_internships.html", { storedJobs: savedJobs });
+  t.after(() => dom.window.close());
+
+  const link = dom.window.document.querySelector(".job-link");
+  assert.equal(link.textContent, "View application");
+  assert.equal(link.getAttribute("href"), "job.html?id=software-1");
+  assert.equal(link.hasAttribute("target"), false);
+});
+
+test("application details load the saved record selected by URL", async (t) => {
+  const dom = await createPage("job.html", {
+    storedJobs: savedJobs,
+    urlSearch: "?id=data-1",
+  });
+  t.after(() => dom.window.close());
+
+  const { document } = dom.window;
+  assert.equal(document.getElementById("job-detail").hidden, false);
+  assert.equal(document.getElementById("job-detail-empty").hidden, true);
+  assert.equal(document.getElementById("job-title").textContent, "Data Analyst Intern");
+  assert.equal(document.getElementById("job-company").textContent, "Harbour Analytics");
+  assert.equal(document.getElementById("job-status").value, "Interested");
+  assert.equal(
+    document.getElementById("job-posting-link").href,
+    "https://example.com/data-1",
+  );
+});
+
+test("application details hide unsafe posting URLs", async (t) => {
+  const unsafeJob = {
+    ...savedJobs[0],
+    url: "javascript:alert(1)",
+  };
+  const dom = await createPage("job.html", {
+    storedJobs: [unsafeJob],
+    urlSearch: "?id=software-1",
+  });
+  t.after(() => dom.window.close());
+
+  const postingLink = dom.window.document.getElementById("job-posting-link");
+  assert.equal(postingLink.hidden, true);
+  assert.equal(postingLink.hasAttribute("href"), false);
+});
+
+test("application detail changes persist to the matching record", async (t) => {
+  let dismissSuccessStatus;
+  let successStatusDuration;
+  const dom = await createPage("job.html", {
+    storedJobs: savedJobs,
+    urlSearch: "?id=software-1",
+    setTimeoutImplementation(callback, duration) {
+      dismissSuccessStatus = callback;
+      successStatusDuration = duration;
+      return 1;
+    },
+  });
+  t.after(() => dom.window.close());
+
+  const { document, localStorage } = dom.window;
+  document.getElementById("job-status").value = "Interview";
+  document.getElementById("job-application-date").value = "2026-08-12";
+  document.getElementById("job-notes").value = "  Prepare system design examples.  ";
+  document.getElementById("job-detail-form").dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+
+  const updatedJobs = JSON.parse(localStorage.getItem(storageKey));
+  assert.equal(updatedJobs[0].status, "Interview");
+  assert.equal(updatedJobs[0].applicationDate, "2026-08-12");
+  assert.equal(updatedJobs[0].notes, "Prepare system design examples.");
+  assert.equal(updatedJobs[1].status, savedJobs[1].status);
+  const appStatus = document.getElementById("app-status");
+  const appStatusMessage = appStatus.querySelector(".app-status-message");
+  assert.equal(appStatusMessage.textContent, "Changes saved.");
+  assert.equal(appStatus.hidden, false);
+  assert.equal(appStatus.getAttribute("role"), "status");
+  assert.equal(appStatus.getAttribute("aria-atomic"), "true");
+  assert.equal(appStatus.classList.contains("is-success"), true);
+  assert.equal(successStatusDuration, 5000);
+
+  dismissSuccessStatus();
+  assert.equal(appStatus.hidden, true);
+  assert.equal(appStatusMessage.textContent, "");
+  assert.equal(appStatus.classList.contains("is-success"), false);
+});
+
+test("cancelling application deletion keeps the saved job", async (t) => {
+  const dom = await createPage("job.html", {
+    storedJobs: savedJobs,
+    urlSearch: "?id=software-1",
+  });
+  t.after(() => dom.window.close());
+
+  const { document, localStorage } = dom.window;
+  const storedValueBeforeDelete = localStorage.getItem(storageKey);
+  const dialog = document.getElementById("job-delete-dialog");
+
+  document.getElementById("job-delete-button").click();
+  assert.equal(dialog.open, true);
+
+  document.getElementById("job-delete-cancel").click();
+  assert.equal(dialog.open, false);
+  assert.equal(localStorage.getItem(storageKey), storedValueBeforeDelete);
+});
+
+test("confirming application deletion removes only the current job", async (t) => {
+  const dom = await createPage("job.html", {
+    storedJobs: savedJobs,
+    urlSearch: "?id=software-1",
+  });
+  t.after(() => dom.window.close());
+
+  const { document, localStorage } = dom.window;
+  document.getElementById("job-delete-button").click();
+  document.getElementById("job-delete-confirm").click();
+
+  const remainingJobs = JSON.parse(localStorage.getItem(storageKey));
+  assert.deepEqual(
+    remainingJobs.map(({ id }) => id),
+    ["data-1"],
+  );
+});
+
+test("application details show a useful empty state for an unknown ID", async (t) => {
+  const dom = await createPage("job.html", {
+    storedJobs: savedJobs,
+    urlSearch: "?id=missing-job",
+  });
+  t.after(() => dom.window.close());
+
+  const { document } = dom.window;
+  assert.equal(document.getElementById("job-detail").hidden, true);
+  assert.equal(document.getElementById("job-detail-empty").hidden, false);
+  assert.equal(document.title, "Application not found | Internship Tracker");
+});
+
+test("application details show a storage error without a misleading empty state", async (t) => {
+  const dom = await createPage("job.html", {
+    rawStoredValue: "not json",
+    urlSearch: "?id=software-1",
+    suppressConsoleErrors: true,
+  });
+  t.after(() => dom.window.close());
+
+  const { document } = dom.window;
+  assert.equal(document.getElementById("job-detail").hidden, true);
+  assert.equal(document.getElementById("job-detail-empty").hidden, true);
+  assert.equal(document.getElementById("app-status").hidden, false);
+});
+
 test("a changed internship status persists into a new page load", async (t) => {
   const jobsWithStatuses = savedJobs.map((job) => ({
     ...job,
@@ -625,16 +781,22 @@ test("all pages pass automated axe checks", async (t) => {
   const dashboardDom = await createPage("dashboard.html", {
     storedJobs: savedJobs,
   });
+  const jobDom = await createPage("job.html", {
+    storedJobs: savedJobs,
+    urlSearch: "?id=software-1",
+  });
   t.after(() => {
     searchDom.window.close();
     savedDom.window.close();
     dashboardDom.window.close();
+    jobDom.window.close();
   });
   await finishAsyncEvent();
 
   assert.deepEqual(await getAccessibilityViolations(searchDom), []);
   assert.deepEqual(await getAccessibilityViolations(savedDom), []);
   assert.deepEqual(await getAccessibilityViolations(dashboardDom), []);
+  assert.deepEqual(await getAccessibilityViolations(jobDom), []);
 });
 
 test("the header action opens and closes the manual application form", async (t) => {

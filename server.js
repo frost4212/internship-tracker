@@ -70,6 +70,10 @@ function createApp({
     res.sendFile(path.join(__dirname, "dashboard.html"));
   });
 
+  app.get("/job.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "job.html"));
+  });
+
   app.get("/api.js", (req, res) => {
     res.sendFile(path.join(__dirname, "api.js"));
   });

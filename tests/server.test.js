@@ -50,6 +50,18 @@ test("the server serves the dashboard page", async (t) => {
   assert.match(html, /<h1>Dashboard<\/h1>/);
 });
 
+test("the server serves the application detail page", async (t) => {
+  const testServer = await startTestServer({});
+  t.after(testServer.close);
+
+  const response = await fetch(`${testServer.baseUrl}/job.html`);
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /^text\/html/);
+  assert.match(html, /id="job-detail"/);
+});
+
 test("the internship endpoint normalizes input and returns Adzuna jobs", async (t) => {
   let requestedUrl;
   let requestOptions;

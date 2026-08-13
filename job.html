@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application details | Internship Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body class="job-detail-page">
+    <a class="skip-link" href="#job-detail-main">Skip to main content</a>
+    <nav class="navbar" aria-label="Primary">
+        <div class="nav-inner">
+            <a class="logo" href="/">Internship Tracker</a>
+            <div class="nav-links">
+                <div class="profile-wrapper" id="profile-wrapper">
+                    <button type="button" class="profile-button" id="profile-button" aria-expanded="false" aria-label="Open profile menu" aria-controls="dropdown-panel">
+                        <img src="pfp.jpg" alt="" class="profile-picture">
+                    </button>
+                    <div class="dropdown-panel" id="dropdown-panel" hidden>
+                        <a href="dashboard.html">Dashboard</a>
+                        <a href="saved_internships.html">Saved Internships</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="job-detail-main" id="job-detail-main" tabindex="-1">
+        <p id="app-status" class="app-status" role="status" aria-atomic="true" hidden>
+            <svg class="app-status-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <circle cx="10" cy="10" r="9" fill="currentColor"></circle>
+                <path d="m6 10.25 2.5 2.5L14 7.5" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+            </svg>
+            <span class="app-status-message"></span>
+        </p>
+
+        <a class="job-back-link" href="saved_internships.html">
+            <span aria-hidden="true">&larr;</span> All applications
+        </a>
+
+        <section class="job-detail" id="job-detail" aria-labelledby="job-title" hidden>
+            <header class="job-detail-header">
+                <p class="job-detail-company" id="job-company">Company</p>
+                <h1 class="job-title job-detail-title" id="job-title">Job title</h1>
+                <p class="job-detail-location" id="job-location">Location</p>
+            </header>
+
+            <form class="job-detail-form" id="job-detail-form">
+                <div class="job-detail-content">
+                    <section class="job-detail-section" aria-labelledby="role-overview-heading">
+                        <h2 id="role-overview-heading">Role overview</h2>
+                        <p class="job-detail-description" id="job-description"></p>
+                    </section>
+
+                    <section class="job-detail-section" aria-labelledby="job-notes-heading">
+                        <div class="job-detail-section-heading">
+                            <h2 id="job-notes-heading">Your notes</h2>
+                            <span>Private to this tracker</span>
+                        </div>
+                        <label class="visually-hidden" for="job-notes">Application notes</label>
+                        <textarea id="job-notes" name="notes" rows="8" placeholder="Add interview prep, contact names, follow-up reminders, or anything else worth remembering."></textarea>
+                    </section>
+                </div>
+
+                <aside class="application-record" aria-labelledby="application-record-heading">
+                    <h2 id="application-record-heading">Application record</h2>
+
+                    <div class="form-field">
+                        <label for="job-status">Status</label>
+                        <div class="job-status-shell">
+                            <select class="status-select" id="job-status" name="status"></select>
+                            <svg viewBox="0 0 12 12" aria-hidden="true">
+                                <path d="m3.25 4.75 2.75 2.75 2.75-2.75"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="job-application-date">Application date</label>
+                        <input id="job-application-date" name="applicationDate" type="date">
+                    </div>
+
+                    <dl class="job-facts">
+                        <div>
+                            <dt>Added</dt>
+                            <dd id="job-created-at">&mdash;</dd>
+                        </div>
+                        <div>
+                            <dt>Last updated</dt>
+                            <dd id="job-updated-at">&mdash;</dd>
+                        </div>
+                        <div>
+                            <dt>Source</dt>
+                            <dd id="job-source">&mdash;</dd>
+                        </div>
+                    </dl>
+
+                    <div class="job-detail-actions">
+                        <button class="job-save-button" id="job-save-button" type="submit">Save changes</button>
+                        <a class="job-posting-link" id="job-posting-link" target="_blank" rel="noopener noreferrer">
+                            Open original posting <span aria-hidden="true">&nearr;</span>
+                        </a>
+                        <button class="job-delete-button" id="job-delete-button" type="button">Delete application</button>
+                    </div>
+                </aside>
+            </form>
+        </section>
+
+        <section class="job-detail-empty" id="job-detail-empty" aria-labelledby="job-detail-empty-title" hidden>
+            <span class="job-detail-empty-mark" aria-hidden="true">?</span>
+            <h1 id="job-detail-empty-title">Application not found</h1>
+            <p>This application may have been removed, or the link may be incomplete.</p>
+            <a href="saved_internships.html">Return to saved applications</a>
+        </section>
+
+        <dialog class="confirm-dialog" id="job-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="job-delete-title" aria-describedby="job-delete-description">
+            <div class="confirm-dialog-content">
+                <h2 id="job-delete-title">Delete this application?</h2>
+                <p id="job-delete-description">This will permanently remove the application from this browser.</p>
+                <div class="confirm-dialog-actions">
+                    <button class="confirm-cancel-btn" id="job-delete-cancel" type="button" autofocus>Cancel</button>
+                    <button class="confirm-clear-btn" id="job-delete-confirm" type="button">Delete application</button>
+                </div>
+            </div>
+        </dialog>
+
+    </main>
+</body>
+</html>
