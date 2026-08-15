@@ -384,10 +384,12 @@ function displayResults(jobs) {
   jobs.forEach((job) => {
     const card = jobTemplate.content.cloneNode(true);
     const jobTitle = job.title || "Untitled position";
+    const companyName = job.company?.display_name || "Not listed";
 
     card.querySelector(".job-title").textContent = jobTitle;
-    card.querySelector(".job-company").textContent =
-      job.company?.display_name || "Not listed";
+    card.querySelector(".job-company").textContent = companyName;
+    card.querySelector(".company-mark").textContent =
+      getCompanyInitials(companyName);
     card.querySelector(".job-location").textContent =
       job.location?.display_name || "Not listed";
     card.querySelector(".job-description").textContent = job.description
@@ -693,12 +695,21 @@ function displaySavedJobs(
   savedJobs.forEach((savedJob) => {
     const card = jobTemplate.content.cloneNode(true);
     const jobTitle = savedJob.title || "Untitled position";
+    const companyName = savedJob.company || "Not listed";
 
     card.querySelector(".job-title").textContent = jobTitle;
-    card.querySelector(".job-company").textContent =
-      savedJob.company || "Not listed";
+    card.querySelector(".job-company").textContent = companyName;
+    card.querySelector(".company-mark").textContent =
+      getCompanyInitials(companyName);
     card.querySelector(".job-location").textContent =
       savedJob.location || "Not listed";
+
+    if (savedJob.applicationDate) {
+      const applicationDate = document.createElement("span");
+      applicationDate.className = "saved-application-date";
+      applicationDate.textContent = `Applied ${formatShortDate(savedJob.applicationDate)}`;
+      card.querySelector(".job-meta").appendChild(applicationDate);
+    }
     card.querySelector(".job-description").textContent = savedJob.description
       ? `${savedJob.description.substring(0, 150)}...`
       : "No description available.";
@@ -1008,6 +1019,11 @@ function loadJobDetails() {
     }
 
     populateStatusSelect(jobStatusSelect, job.status);
+    updateJobProgress(jobStatusSelect.value);
+
+    jobStatusSelect.addEventListener("change", () => {
+      updateJobProgress(jobStatusSelect.value);
+    });
 
     jobDetailForm.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1056,6 +1072,85 @@ function getDisplayValue(value, fallback) {
   return typeof value === "string" && value.trim().length > 0
     ? value
     : fallback;
+}
+
+function updateJobProgress(status) {
+  const progress = document.querySelector(".application-progress");
+  const outcome = document.getElementById("application-outcome");
+  const outcomeValue = document.getElementById("application-outcome-value");
+
+  if (!progress || !outcome || !outcomeValue) {
+    return;
+  }
+
+  const activeStatuses = [
+    "Interested",
+    "Preparing",
+    "Applied",
+    "Online Assessment",
+    "Interview",
+    "Offer",
+  ];
+  const steps = Array.from(progress.querySelectorAll("[data-progress-status]"));
+  const currentIndex = activeStatuses.indexOf(status);
+
+  steps.forEach((step, index) => {
+    step.className =
+      index < currentIndex
+        ? "is-complete"
+        : index === currentIndex
+          ? "is-current"
+          : "is-upcoming";
+  });
+
+  if (status === "Accepted") {
+    steps.forEach((step) => {
+      step.className = "is-complete";
+    });
+    outcome.dataset.outcome = "accepted";
+    outcomeValue.textContent = status;
+    outcome.hidden = false;
+  } else if (status === "Rejected" || status === "Withdrawn") {
+    steps.forEach((step) => {
+      step.className = "is-upcoming";
+    });
+    outcome.dataset.outcome = status.toLowerCase();
+    outcomeValue.textContent = status;
+    outcome.hidden = false;
+  } else {
+    delete outcome.dataset.outcome;
+    outcomeValue.textContent = "";
+    outcome.hidden = true;
+  }
+}
+
+function getCompanyInitials(companyName) {
+  const words = String(companyName)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "?";
+  }
+
+  return words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+}
+
+function formatShortDate(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function formatJobDate(dateString) {

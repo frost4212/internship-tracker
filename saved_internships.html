@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saved Internships</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logos/internship-tracker-icon-white-transparent.png">
+    <link rel="apple-touch-icon" href="logos/internship-tracker-icon-blue.png">
     <link rel="stylesheet" href="style.css">
     <script src="app.js" defer></script>
 </head>
@@ -14,7 +13,9 @@
     <a class="skip-link" href="#saved-search">Skip to main content</a>
     <nav class="navbar" aria-label="Primary">
         <div class="nav-inner">
-            <a class="logo" href="/">Internship Tracker</a>
+            <a class="logo" href="/">
+                <img src="logos/internship-tracker-wordmark-blue.png" alt="Internship Tracker">
+            </a>
             <div class="nav-links">
                 <a id="saved-nav-search" href="#saved-search" aria-current="location">Search</a>
                 <a id="saved-nav-results" href="#saved-results">Results</a>
@@ -149,28 +150,31 @@
 
         <template id="job-template">
                 <article class="job-card">
-                    <header class="job-card-header">
-                        <h2 class="job-title"></h2>
-                        <button type="button" class="save-button" aria-label="Save internship" aria-pressed="false">
-                            <svg class="save-icon save-icon-plus" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M5 12h14"></path>
-                                <path d="M12 5v14"></path>
-                            </svg>
-                            <svg class="save-icon save-icon-check" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M20 6 9 17l-5-5"></path>
-                            </svg>
-                        </button>
-                    </header>
-                    <p class="job-meta">
-                        <span class="job-company"></span>
-                        <span class="job-location"></span>
-                    </p>
-                    <p class="job-description"></p>
-                    <footer class="job-card-footer">
-                        <a class="job-link" target="_blank" rel="noopener noreferrer">
-                            View details
-                        </a>
-                    </footer>
+                    <span class="company-mark" aria-hidden="true"></span>
+                    <div class="job-card-content">
+                        <header class="job-card-header">
+                            <h2 class="job-title"></h2>
+                            <button type="button" class="save-button" aria-label="Save internship" aria-pressed="false">
+                                <svg class="save-icon save-icon-plus" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M5 12h14"></path>
+                                    <path d="M12 5v14"></path>
+                                </svg>
+                                <svg class="save-icon save-icon-check" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M20 6 9 17l-5-5"></path>
+                                </svg>
+                            </button>
+                        </header>
+                        <p class="job-meta">
+                            <span class="job-company"></span>
+                            <span class="job-location"></span>
+                        </p>
+                        <p class="job-description"></p>
+                        <footer class="job-card-footer">
+                            <a class="job-link" target="_blank" rel="noopener noreferrer">
+                                View details
+                            </a>
+                        </footer>
+                    </div>
                 </article>
         </template>
     </main>

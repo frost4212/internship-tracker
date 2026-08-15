@@ -90,6 +90,15 @@ function createApp({
     res.sendFile(path.join(__dirname, "pfp.jpg"));
   });
 
+  app.use(
+    "/logos",
+    express.static(path.join(__dirname, "logos"), {
+      fallthrough: false,
+      index: false,
+      redirect: false,
+    }),
+  );
+
   // Secure endpoint that communicates with Adzuna
   app.get("/api/internships", async (req, res) => {
     const keyword =

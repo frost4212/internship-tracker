@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application details | Internship Tracker</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logos/internship-tracker-icon-white-transparent.png">
+    <link rel="apple-touch-icon" href="logos/internship-tracker-icon-blue.png">
     <link rel="stylesheet" href="style.css">
     <script src="app.js" defer></script>
 </head>
@@ -14,7 +13,9 @@
     <a class="skip-link" href="#job-detail-main">Skip to main content</a>
     <nav class="navbar" aria-label="Primary">
         <div class="nav-inner">
-            <a class="logo" href="/">Internship Tracker</a>
+            <a class="logo" href="/">
+                <img src="logos/internship-tracker-wordmark-blue.png" alt="Internship Tracker">
+            </a>
             <div class="nav-links">
                 <div class="profile-wrapper" id="profile-wrapper">
                     <button type="button" class="profile-button" id="profile-button" aria-expanded="false" aria-label="Open profile menu" aria-controls="dropdown-panel">
@@ -77,6 +78,22 @@
                                 <path d="m3.25 4.75 2.75 2.75 2.75-2.75"></path>
                             </svg>
                         </div>
+                    </div>
+
+                    <div class="application-progress-block">
+                        <p class="application-progress-label">Progress</p>
+                        <ol class="application-progress" aria-label="Application progress">
+                            <li data-progress-status="Interested"><span>Interested</span></li>
+                            <li data-progress-status="Preparing"><span>Preparing</span></li>
+                            <li data-progress-status="Applied"><span>Applied</span></li>
+                            <li data-progress-status="Online Assessment"><span>Assess.</span></li>
+                            <li data-progress-status="Interview"><span>Interview</span></li>
+                            <li data-progress-status="Offer"><span>Offer</span></li>
+                        </ol>
+                        <p class="application-outcome" id="application-outcome" hidden>
+                            <span class="application-outcome-label">Outcome</span>
+                            <strong class="application-outcome-value" id="application-outcome-value"></strong>
+                        </p>
                     </div>
 
                     <div class="form-field">
