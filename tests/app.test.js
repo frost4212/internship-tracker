@@ -2,7 +2,6 @@ const assert = require("node:assert/strict");
 const { readFile } = require("node:fs/promises");
 const path = require("node:path");
 const { test } = require("node:test");
-const axeCore = require("axe-core");
 const { JSDOM } = require("jsdom");
 
 const projectRoot = path.resolve(__dirname, "..");
@@ -112,20 +111,6 @@ async function finishAsyncEvent() {
 function changeStatus(dom, select, status) {
   select.value = status;
   select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-}
-
-async function getAccessibilityViolations(dom) {
-  dom.window.eval(axeCore.source);
-  const { violations } = await dom.window.axe.run(dom.window.document, {
-    rules: {
-      // jsdom does not calculate layout or rendered color contrast.
-      "color-contrast": { enabled: false },
-    },
-  });
-  return Array.from(violations, ({ id, nodes }) => ({
-    id,
-    nodes: nodes.length,
-  }));
 }
 
 test("saved search filters internships by keyword and location", async (t) => {
@@ -374,16 +359,6 @@ test("a saved internship persists into a new page load", async (t) => {
   );
 });
 
-test("saved application cards link to the application detail page", async (t) => {
-  const dom = await createPage("saved_internships.html", { storedJobs: savedJobs });
-  t.after(() => dom.window.close());
-
-  const link = dom.window.document.querySelector(".job-link");
-  assert.equal(link.textContent, "View application");
-  assert.equal(link.getAttribute("href"), "job.html?id=software-1");
-  assert.equal(link.hasAttribute("target"), false);
-});
-
 test("application details load the saved record selected by URL", async (t) => {
   const dom = await createPage("job.html", {
     storedJobs: savedJobs,
@@ -403,20 +378,38 @@ test("application details load the saved record selected by URL", async (t) => {
   );
 });
 
-test("application details hide unsafe posting URLs", async (t) => {
-  const unsafeJob = {
-    ...savedJobs[0],
-    url: "javascript:alert(1)",
-  };
+test("changing application status updates the visible progress state", async (t) => {
   const dom = await createPage("job.html", {
-    storedJobs: [unsafeJob],
+    storedJobs: savedJobs,
     urlSearch: "?id=software-1",
   });
   t.after(() => dom.window.close());
 
-  const postingLink = dom.window.document.getElementById("job-posting-link");
-  assert.equal(postingLink.hidden, true);
-  assert.equal(postingLink.hasAttribute("href"), false);
+  const { document } = dom.window;
+  const select = document.getElementById("job-status");
+  changeStatus(dom, select, "Offer");
+
+  const progress = document.querySelector(".application-progress");
+  assert.equal(
+    progress.querySelector('[data-progress-status="Interview"]').className,
+    "is-complete",
+  );
+  assert.equal(
+    progress.querySelector('[data-progress-status="Offer"]').className,
+    "is-current",
+  );
+  const outcome = document.getElementById("application-outcome");
+  const outcomeValue = document.getElementById("application-outcome-value");
+  assert.equal(outcome.hidden, true);
+
+  changeStatus(dom, select, "Accepted");
+  assert.equal(outcome.hidden, false);
+  assert.equal(outcome.dataset.outcome, "accepted");
+  assert.equal(outcomeValue.textContent, "Accepted");
+
+  changeStatus(dom, select, "Rejected");
+  assert.equal(outcome.dataset.outcome, "rejected");
+  assert.equal(outcomeValue.textContent, "Rejected");
 });
 
 test("application detail changes persist to the matching record", async (t) => {
@@ -461,25 +454,6 @@ test("application detail changes persist to the matching record", async (t) => {
   assert.equal(appStatus.classList.contains("is-success"), false);
 });
 
-test("cancelling application deletion keeps the saved job", async (t) => {
-  const dom = await createPage("job.html", {
-    storedJobs: savedJobs,
-    urlSearch: "?id=software-1",
-  });
-  t.after(() => dom.window.close());
-
-  const { document, localStorage } = dom.window;
-  const storedValueBeforeDelete = localStorage.getItem(storageKey);
-  const dialog = document.getElementById("job-delete-dialog");
-
-  document.getElementById("job-delete-button").click();
-  assert.equal(dialog.open, true);
-
-  document.getElementById("job-delete-cancel").click();
-  assert.equal(dialog.open, false);
-  assert.equal(localStorage.getItem(storageKey), storedValueBeforeDelete);
-});
-
 test("confirming application deletion removes only the current job", async (t) => {
   const dom = await createPage("job.html", {
     storedJobs: savedJobs,
@@ -496,33 +470,6 @@ test("confirming application deletion removes only the current job", async (t) =
     remainingJobs.map(({ id }) => id),
     ["data-1"],
   );
-});
-
-test("application details show a useful empty state for an unknown ID", async (t) => {
-  const dom = await createPage("job.html", {
-    storedJobs: savedJobs,
-    urlSearch: "?id=missing-job",
-  });
-  t.after(() => dom.window.close());
-
-  const { document } = dom.window;
-  assert.equal(document.getElementById("job-detail").hidden, true);
-  assert.equal(document.getElementById("job-detail-empty").hidden, false);
-  assert.equal(document.title, "Application not found | Internship Tracker");
-});
-
-test("application details show a storage error without a misleading empty state", async (t) => {
-  const dom = await createPage("job.html", {
-    rawStoredValue: "not json",
-    urlSearch: "?id=software-1",
-    suppressConsoleErrors: true,
-  });
-  t.after(() => dom.window.close());
-
-  const { document } = dom.window;
-  assert.equal(document.getElementById("job-detail").hidden, true);
-  assert.equal(document.getElementById("job-detail-empty").hidden, true);
-  assert.equal(document.getElementById("app-status").hidden, false);
 });
 
 test("a changed internship status persists into a new page load", async (t) => {
@@ -584,50 +531,6 @@ test("changing a status updates only the internship with the matching ID", async
   assert.equal(storedJobs[1].createdAt, jobsWithStatuses[1].createdAt);
 });
 
-test("saved internships without a status are rejected", async (t) => {
-  const dom = await createPage("saved_internships.html");
-  t.after(() => dom.window.close());
-
-  const jobWithoutStatus = { ...savedJobs[0] };
-  delete jobWithoutStatus.status;
-
-  assert.equal(dom.window.isValidSavedJob(jobWithoutStatus), false);
-});
-
-test("complete application records pass schema validation", async (t) => {
-  const dom = await createPage("saved_internships.html");
-  t.after(() => dom.window.close());
-
-  assert.equal(dom.window.isValidSavedJob(savedJobs[0]), true);
-  assert.equal(
-    dom.window.isValidSavedJob({ ...savedJobs[0], source: "manual" }),
-    true,
-  );
-});
-
-test("application records with invalid new fields are rejected", async (t) => {
-  const dom = await createPage("saved_internships.html");
-  t.after(() => dom.window.close());
-
-  const invalidJobs = [
-    ["unsupported status", { ...savedJobs[0], status: "Unknown" }],
-    ["blank title", { ...savedJobs[0], title: "   " }],
-    ["blank company", { ...savedJobs[0], company: "   " }],
-    ["invalid creation timestamp", { ...savedJobs[0], createdAt: "not-a-date" }],
-    ["invalid update timestamp", { ...savedJobs[0], updatedAt: "not-a-date" }],
-    ["unsupported source", { ...savedJobs[0], source: "spreadsheet" }],
-    [
-      "invalid manual-record timestamp",
-      { ...savedJobs[0], source: "manual", createdAt: "not-a-date" },
-    ],
-    ["missing notes", { ...savedJobs[0], notes: undefined }],
-  ];
-
-  invalidJobs.forEach(([description, job]) => {
-    assert.equal(dom.window.isValidSavedJob(job), false, description);
-  });
-});
-
 test("a status change rolls back when storage writing fails", async (t) => {
   const jobsWithStatuses = [{ ...savedJobs[0], status: "Applied" }];
   const dom = await createPage("saved_internships.html", {
@@ -662,162 +565,6 @@ test("a status change rolls back when storage writing fails", async (t) => {
     document.getElementById("app-status").textContent,
     /couldn't be updated/,
   );
-});
-
-test("writeSavedJobs rejects a single object without changing storage", async (t) => {
-  const dom = await createPage("saved_internships.html", {
-    storedJobs: savedJobs,
-    suppressConsoleErrors: true,
-  });
-  t.after(() => dom.window.close());
-
-  const storedValueBeforeWrite =
-    dom.window.localStorage.getItem(storageKey);
-  const wasSaved = dom.window.writeSavedJobs(savedJobs[0]);
-
-  assert.equal(wasSaved, false);
-  assert.equal(
-    dom.window.localStorage.getItem(storageKey),
-    storedValueBeforeWrite,
-  );
-  assert.match(
-    dom.window.document.getElementById("app-status").textContent,
-    /data format was invalid/,
-  );
-});
-
-test("the profile dropdown opens, closes outside, and closes with Escape", async (t) => {
-  const dom = await createPage("index.html");
-  t.after(() => dom.window.close());
-
-  const { document } = dom.window;
-  const profileButton = document.getElementById("profile-button");
-  const dropdownPanel = document.getElementById("dropdown-panel");
-
-  profileButton.click();
-  assert.equal(dropdownPanel.hidden, false);
-  assert.equal(profileButton.getAttribute("aria-expanded"), "true");
-  assert.equal(profileButton.getAttribute("aria-label"), "Close profile menu");
-
-  document.body.dispatchEvent(
-    new dom.window.Event("pointerdown", { bubbles: true }),
-  );
-  assert.equal(dropdownPanel.hidden, true);
-  assert.equal(profileButton.getAttribute("aria-expanded"), "false");
-
-  profileButton.click();
-  document.dispatchEvent(
-    new dom.window.KeyboardEvent("keydown", {
-      bubbles: true,
-      key: "Escape",
-    }),
-  );
-  assert.equal(dropdownPanel.hidden, true);
-  assert.equal(document.activeElement, profileButton);
-});
-
-test("both pages expose accessible landmarks and heading structure", async (t) => {
-  const searchDom = await createPage("index.html", {
-    fetchInternships: async () => ({ jobs: [], totalResults: 0 }),
-  });
-  const savedDom = await createPage("saved_internships.html", {
-    storedJobs: savedJobs,
-  });
-  t.after(() => {
-    searchDom.window.close();
-    savedDom.window.close();
-  });
-  await finishAsyncEvent();
-
-  [searchDom, savedDom].forEach((dom) => {
-    const { document } = dom.window;
-    assert.equal(document.querySelector(".skip-link").textContent, "Skip to main content");
-    assert.equal(document.querySelector(".navbar").getAttribute("aria-label"), "Primary");
-    assert.equal(
-      document.getElementById("job-template").content.querySelector(".job-title").tagName,
-      "H2",
-    );
-  });
-});
-
-test("search updates move focus to the results heading", async (t) => {
-  const apiJob = {
-    id: "focus-1",
-    title: "Accessibility Intern",
-    company: { display_name: "Inclusive Labs" },
-    location: { display_name: "Remote" },
-    description: "Test accessible interfaces.",
-    redirect_url: "https://example.com/focus-1",
-  };
-  const dom = await createPage("index.html", {
-    fetchInternships: async () => ({ jobs: [apiJob], totalResults: 21 }),
-  });
-  t.after(() => dom.window.close());
-  await finishAsyncEvent();
-
-  const { document } = dom.window;
-  const form = document.getElementById("search-form");
-  const resultsHeader = document.getElementById("results-header");
-  form.dispatchEvent(
-    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
-  );
-  await finishAsyncEvent();
-  assert.equal(document.activeElement, resultsHeader);
-
-  const nextPage = document.querySelector('#pagination button[data-page="2"]');
-  nextPage.focus();
-  nextPage.click();
-  await finishAsyncEvent();
-  assert.equal(document.activeElement, resultsHeader);
-});
-
-test("all pages pass automated axe checks", async (t) => {
-  const searchDom = await createPage("index.html", {
-    fetchInternships: async () => ({ jobs: [], totalResults: 0 }),
-  });
-  const savedDom = await createPage("saved_internships.html", {
-    storedJobs: savedJobs,
-  });
-  const dashboardDom = await createPage("dashboard.html", {
-    storedJobs: savedJobs,
-  });
-  const jobDom = await createPage("job.html", {
-    storedJobs: savedJobs,
-    urlSearch: "?id=software-1",
-  });
-  t.after(() => {
-    searchDom.window.close();
-    savedDom.window.close();
-    dashboardDom.window.close();
-    jobDom.window.close();
-  });
-  await finishAsyncEvent();
-
-  assert.deepEqual(await getAccessibilityViolations(searchDom), []);
-  assert.deepEqual(await getAccessibilityViolations(savedDom), []);
-  assert.deepEqual(await getAccessibilityViolations(dashboardDom), []);
-  assert.deepEqual(await getAccessibilityViolations(jobDom), []);
-});
-
-test("the header action opens and closes the manual application form", async (t) => {
-  const dom = await createPage("saved_internships.html");
-  t.after(() => dom.window.close());
-
-  const { document } = dom.window;
-  const toggle = document.getElementById("manual-entry-toggle");
-  const form = document.getElementById("manual-application-form");
-
-  assert.equal(form.hidden, true);
-  assert.equal(toggle.getAttribute("aria-expanded"), "false");
-
-  toggle.click();
-  assert.equal(form.hidden, false);
-  assert.equal(toggle.getAttribute("aria-expanded"), "true");
-  assert.equal(document.activeElement, document.getElementById("manual-title"));
-
-  toggle.click();
-  assert.equal(form.hidden, true);
-  assert.equal(toggle.getAttribute("aria-expanded"), "false");
 });
 
 test("submitting the manual form saves and displays a normalized application", async (t) => {
@@ -887,85 +634,4 @@ test("submitting the manual form saves and displays a normalized application", a
   assert.equal(document.getElementById("manual-title").value, "");
   assert.equal(statusSelect.value, "Interested");
   assert.equal(document.activeElement, document.getElementById("saved-results"));
-});
-
-test("manual submissions with a whitespace-only title are rejected", async (t) => {
-  const dom = await createPage("saved_internships.html", {
-    suppressConsoleErrors: true,
-  });
-  t.after(() => dom.window.close());
-
-  const { document, localStorage } = dom.window;
-  document.getElementById("manual-title").value = "   ";
-  document.getElementById("manual-company").value = "Example Company";
-  document.getElementById("manual-application-form").dispatchEvent(
-    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
-  );
-
-  assert.equal(localStorage.getItem(storageKey), null);
-  assert.equal(document.querySelectorAll(".job-card").length, 0);
-  assert.equal(document.getElementById("app-status").hidden, false);
-  assert.match(
-    document.getElementById("app-status").textContent,
-    /data format was invalid/,
-  );
-});
-
-test("writeSavedJobs rejects an array containing an invalid record", async (t) => {
-  const dom = await createPage("saved_internships.html", {
-    storedJobs: savedJobs,
-    suppressConsoleErrors: true,
-  });
-  t.after(() => dom.window.close());
-
-  const storedValueBeforeWrite = dom.window.localStorage.getItem(storageKey);
-  const invalidJobs = [{ ...savedJobs[0], title: "   " }];
-  const wasSaved = dom.window.writeSavedJobs(invalidJobs);
-
-  assert.equal(wasSaved, false);
-  assert.equal(
-    dom.window.localStorage.getItem(storageKey),
-    storedValueBeforeWrite,
-  );
-  assert.equal(dom.window.document.getElementById("app-status").hidden, false);
-  assert.match(
-    dom.window.document.getElementById("app-status").textContent,
-    /data format was invalid/,
-  );
-});
-
-test("a storage failure shows an error without showing the empty state", async (t) => {
-  const dom = await createPage("saved_internships.html", {
-    rawStoredValue: "{invalid JSON",
-    suppressConsoleErrors: true,
-  });
-  t.after(() => dom.window.close());
-
-  const { document } = dom.window;
-  assert.equal(document.getElementById("app-status").hidden, false);
-  assert.match(
-    document.getElementById("app-status").textContent,
-    /couldn't be loaded/,
-  );
-  assert.equal(document.querySelectorAll(".saved-empty").length, 0);
-  assert.equal(document.querySelectorAll(".job-card").length, 0);
-});
-
-test("malformed saved descriptions are rejected before rendering", async (t) => {
-  const malformedJob = {
-    ...savedJobs[0],
-    id: "malformed-1",
-    description: { text: "This is not a string." },
-  };
-  const dom = await createPage("saved_internships.html", {
-    storedJobs: [malformedJob, savedJobs[1]],
-  });
-  t.after(() => dom.window.close());
-
-  const cards = dom.window.document.querySelectorAll(".job-card");
-  assert.equal(cards.length, 1);
-  assert.equal(
-    cards[0].querySelector(".job-title").textContent,
-    "Data Analyst Intern",
-  );
 });

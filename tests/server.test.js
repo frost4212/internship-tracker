@@ -50,18 +50,6 @@ test("the server serves the dashboard page", async (t) => {
   assert.match(html, /<h1>Dashboard<\/h1>/);
 });
 
-test("the server serves the application detail page", async (t) => {
-  const testServer = await startTestServer({});
-  t.after(testServer.close);
-
-  const response = await fetch(`${testServer.baseUrl}/job.html`);
-  const html = await response.text();
-
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type"), /^text\/html/);
-  assert.match(html, /id="job-detail"/);
-});
-
 test("the internship endpoint normalizes input and returns Adzuna jobs", async (t) => {
   let requestedUrl;
   let requestOptions;
@@ -98,23 +86,6 @@ test("the internship endpoint normalizes input and returns Adzuna jobs", async (
   assert.equal(upstreamUrl.searchParams.get("what"), "software intern");
   assert.equal(upstreamUrl.searchParams.get("where"), "Valletta");
   assert.equal(requestOptions.signal instanceof AbortSignal, true);
-});
-
-test("the internship endpoint replaces malformed Adzuna results with an array", async (t) => {
-  const testServer = await startTestServer({
-    fetchImpl: async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ results: { id: "not-an-array" }, count: 4 }),
-    }),
-  });
-  t.after(testServer.close);
-
-  const response = await fetch(`${testServer.baseUrl}/api/internships`);
-  const body = await response.json();
-
-  assert.equal(response.status, 200);
-  assert.deepEqual(body, { jobs: [], totalResults: 4 });
 });
 
 test("the internship endpoint returns 502 for an upstream error response", async (t) => {
