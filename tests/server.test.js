@@ -67,6 +67,18 @@ test("the server serves the privacy and terms pages", async (t) => {
   }
 });
 
+test("the server serves the back-to-top script", async (t) => {
+  const testServer = await startTestServer({});
+  t.after(testServer.close);
+
+  const response = await fetch(`${testServer.baseUrl}/back-to-top.js`);
+  const script = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /javascript/);
+  assert.match(script, /Back to top/);
+});
+
 test("the internship endpoint normalizes input and returns Adzuna jobs", async (t) => {
   let requestedUrl;
   let requestOptions;

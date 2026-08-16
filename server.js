@@ -90,6 +90,10 @@ function createApp({
     res.sendFile(path.join(__dirname, "app.js"));
   });
 
+  app.get("/back-to-top.js", (req, res) => {
+    res.sendFile(path.join(__dirname, "back-to-top.js"));
+  });
+
   app.get("/style.css", (req, res) => {
     res.sendFile(path.join(__dirname, "style.css"));
   });
