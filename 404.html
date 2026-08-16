@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>404 — Page not found | Internship Tracker</title>
+    <link rel="icon" type="image/png" href="/logos/internship-tracker-icon-white-transparent.png">
+    <link rel="apple-touch-icon" href="/logos/internship-tracker-icon-blue.png">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="error-page">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <nav class="navbar" aria-label="Primary">
+        <div class="nav-inner">
+            <a class="logo" href="/" aria-label="Internship Tracker home">
+                <img src="/logos/internship-tracker-wordmark-blue.png" alt="Internship Tracker">
+            </a>
+            <div class="nav-links">
+                <a href="/">Search</a>
+                <a href="/saved_internships.html">Saved applications</a>
+                <a href="/dashboard.html">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="error-main" id="main-content" tabindex="-1">
+        <section class="error-copy" aria-labelledby="error-title">
+            <h1 id="error-title"><span class="visually-hidden">Page not found. </span>This opportunity moved on.</h1>
+            <p class="error-message">
+                This page no longer exists or may have moved. Return to search to find your next opportunity.
+            </p>
+            <div class="error-actions">
+                <a class="error-action error-action-primary" href="/">
+                    Return to search
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14"></path>
+                        <path d="m13 6 6 6-6 6"></path>
+                    </svg>
+                </a>
+                <a class="error-action error-action-secondary" href="/saved_internships.html">Saved applications</a>
+            </div>
+        </section>
+
+        <aside class="error-display" aria-label="Error 404">
+            <span class="error-display-number" aria-hidden="true">404</span>
+            <span class="error-display-word" aria-hidden="true">Error</span>
+        </aside>
+    </main>
+
+    <footer class="error-footer">Internship Tracker · Keep every application moving</footer>
+</body>
+</html>
