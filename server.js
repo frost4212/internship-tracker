@@ -74,6 +74,14 @@ function createApp({
     res.sendFile(path.join(__dirname, "job.html"));
   });
 
+  app.get("/privacy.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "privacy.html"));
+  });
+
+  app.get("/terms.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "terms.html"));
+  });
+
   app.get("/api.js", (req, res) => {
     res.sendFile(path.join(__dirname, "api.js"));
   });

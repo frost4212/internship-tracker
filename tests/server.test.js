@@ -50,6 +50,23 @@ test("the server serves the dashboard page", async (t) => {
   assert.match(html, /<h1>Dashboard<\/h1>/);
 });
 
+test("the server serves the privacy and terms pages", async (t) => {
+  const testServer = await startTestServer({});
+  t.after(testServer.close);
+
+  for (const [pathname, heading] of [
+    ["/privacy.html", "Privacy"],
+    ["/terms.html", "Terms"],
+  ]) {
+    const response = await fetch(`${testServer.baseUrl}${pathname}`);
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^text\/html/);
+    assert.match(html, new RegExp(`<h1>${heading}<\\/h1>`));
+  }
+});
+
 test("the internship endpoint normalizes input and returns Adzuna jobs", async (t) => {
   let requestedUrl;
   let requestOptions;
