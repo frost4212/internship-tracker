@@ -198,8 +198,20 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = {
-  createApp,
-  getAdzunaCredentials,
-  startServer,
-};
+let vercelApp;
+
+function vercelHandler(req, res, next) {
+  if (!vercelApp) {
+    vercelApp = createApp({
+      appId: process.env.APP_ID,
+      appKey: process.env.APP_KEY,
+    });
+  }
+
+  return vercelApp(req, res, next);
+}
+
+module.exports = vercelHandler;
+module.exports.createApp = createApp;
+module.exports.getAdzunaCredentials = getAdzunaCredentials;
+module.exports.startServer = startServer;

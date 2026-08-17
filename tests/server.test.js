@@ -1,11 +1,16 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
-const { createApp, getAdzunaCredentials } = require("../server");
+const serverModule = require("../server");
+const { createApp, getAdzunaCredentials } = serverModule;
 
 const silentLogger = {
   error() {},
 };
+
+test("the server module exports a Vercel-compatible handler", () => {
+  assert.equal(typeof serverModule, "function");
+});
 
 async function startTestServer(options) {
   const app = createApp({
