@@ -79,6 +79,18 @@ test("the server serves the back-to-top script", async (t) => {
   assert.match(script, /Back to top/);
 });
 
+test("the server serves robots.txt", async (t) => {
+  const testServer = await startTestServer({});
+  t.after(testServer.close);
+
+  const response = await fetch(`${testServer.baseUrl}/robots.txt`);
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type"), /^text\/plain/);
+  assert.equal(body, "User-agent: *\nDisallow: /api/\n");
+});
+
 test("the internship endpoint normalizes input and returns Adzuna jobs", async (t) => {
   let requestedUrl;
   let requestOptions;

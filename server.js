@@ -82,6 +82,10 @@ function createApp({
     res.sendFile(path.join(__dirname, "terms.html"));
   });
 
+  app.get("/robots.txt", (req, res) => {
+    res.type("text/plain").sendFile(path.join(__dirname, "robots.txt"));
+  });
+
   app.get("/api.js", (req, res) => {
     res.sendFile(path.join(__dirname, "api.js"));
   });
