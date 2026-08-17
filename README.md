@@ -2,6 +2,8 @@
 
 A small web application for finding internships and tracking applications in one place. Internship listings are retrieved from Adzuna, while saved applications and their progress are stored locally in the browser.
 
+**Live demo:** [Internship Tracker](https://internship-tracker-coral-kappa.vercel.app/)
+
 ## Screenshots
 
 ### Internship search
