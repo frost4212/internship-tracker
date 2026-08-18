@@ -1,14 +1,14 @@
 {
   "name": "internship-tracker",
   "version": "1.0.0",
-  "description": "",
+  "description": "A web app for finding internships, saving opportunities, and tracking applications in one place.",
   "main": "server.js",
   "scripts": {
     "test": "node --check server.js && node --check api.js && node --check app.js && node --check back-to-top.js && node --test",
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Arbis Murati",
   "license": "MIT",
   "type": "commonjs",
   "engines": {
